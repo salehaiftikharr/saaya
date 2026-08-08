@@ -77,6 +77,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 app, engine, activity, resolved.heartbeat_quiet_seconds
             )
             scheduler = start_scheduler(heartbeat, resolved.heartbeat_interval_seconds)
+            app.state.mcp_enabled = mcp_app is not None
+            app.state.slack_connected = False
             slack = None
             if resolved.slack_bot_token and resolved.slack_app_token:
                 from saaya.channels.slack import SlackChannel
@@ -88,6 +90,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     activity=activity,
                 )
                 await slack.connect()
+                app.state.slack_connected = True
             try:
                 if mcp_app is not None:
                     async with mcp_app.router.lifespan_context(mcp_app):

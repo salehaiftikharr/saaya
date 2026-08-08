@@ -24,11 +24,18 @@ class ChatRequest(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     version: str
+    surfaces: dict[str, str]
 
 
 @router.get("/api/health")
-async def health() -> HealthResponse:
-    return HealthResponse(status="ok", version=__version__)
+async def health(request: Request) -> HealthResponse:
+    state = request.app.state
+    surfaces = {
+        "web": "ok",
+        "slack": "connected" if getattr(state, "slack_connected", False) else "off",
+        "mcp": "enabled" if getattr(state, "mcp_enabled", False) else "off",
+    }
+    return HealthResponse(status="ok", version=__version__, surfaces=surfaces)
 
 
 def _sse(event: WireEvent) -> str:
