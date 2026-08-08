@@ -3,15 +3,11 @@ embedder: no network, no keys. Skipped when the database is not running."""
 
 import hashlib
 import uuid
-from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from saaya.config import Settings
-from saaya.db.engine import create_engine, to_async_url
-from saaya.db.models import MemoryItem
+from saaya.db.engine import to_async_url
 from saaya.memory.store import SemanticMemoryStore
 
 
@@ -29,21 +25,6 @@ def fake_embedding(text: str) -> list[float]:
 
 async def embed(text: str) -> list[float]:
     return fake_embedding(text)
-
-
-@pytest.fixture()
-async def engine() -> AsyncIterator[AsyncEngine]:
-    settings = Settings()
-    engine = create_engine(settings.database_url)
-    try:
-        async with engine.connect():
-            pass
-    except Exception:
-        pytest.skip("postgres is not running; start docker compose")
-    yield engine
-    # Marker-prefixed rows are this suite's; the dev database is shared.
-    async with engine.begin() as connection:
-        await connection.execute(delete(MemoryItem).where(MemoryItem.text.op("~")("^[0-9a-f]{8} ")))
 
 
 def test_to_async_url_spells_the_driver() -> None:

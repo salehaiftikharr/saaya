@@ -3,28 +3,13 @@ Uses the local Postgres like the store tests; skips when it is down. Every
 row a test writes is deleted afterward; the dev database is shared."""
 
 import uuid
-from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from saaya.config import Settings
-from saaya.db.engine import create_engine
-from saaya.db.models import HeartbeatRun, Thread
 from saaya.heartbeat.activity import ThreadActivity
 from saaya.heartbeat.runner import ReflectHeartbeat
-
-TEST_PREFIX = "test-"
-
-
-async def _purge(engine: AsyncEngine) -> None:
-    async with engine.begin() as connection:
-        await connection.execute(delete(Thread).where(Thread.id.like(f"{TEST_PREFIX}%")))
-        await connection.execute(
-            delete(HeartbeatRun).where(HeartbeatRun.detail.like(f"{TEST_PREFIX}%"))
-        )
 
 
 class FakeClock:
@@ -36,19 +21,6 @@ class FakeClock:
 
     def advance(self, seconds: int) -> None:
         self.now += timedelta(seconds=seconds)
-
-
-@pytest.fixture()
-async def engine() -> AsyncIterator[AsyncEngine]:
-    settings = Settings()
-    engine = create_engine(settings.database_url)
-    try:
-        async with engine.connect():
-            pass
-    except Exception:
-        pytest.skip("postgres is not running; start docker compose")
-    yield engine
-    await _purge(engine)
 
 
 @pytest.fixture()
