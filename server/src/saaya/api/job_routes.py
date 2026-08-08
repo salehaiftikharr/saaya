@@ -7,12 +7,20 @@ import json
 from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from saaya.jobs import states
 from saaya.jobs.states import IllegalTransition
-from saaya.jobs.store import JobEventView, JobStore, JobView
+from saaya.jobs.store import (
+    ApprovalStore,
+    ApprovalView,
+    ArtifactView,
+    JobEventView,
+    JobStore,
+    JobView,
+)
+from saaya.jobs.workspace import WorkspaceViolation, guarded_read, job_workspace
 
 jobs_router = APIRouter()
 
@@ -26,10 +34,23 @@ class CreateJobBody(BaseModel):
 class JobDetail(BaseModel):
     job: JobView
     events: list[JobEventView]
+    approvals: list[ApprovalView]
+    artifacts: list[ArtifactView]
+
+
+class DecisionBody(BaseModel):
+    decision: str = Field(pattern="^(approved|rejected)$")
 
 
 def _store(request: Request) -> JobStore:
     store = getattr(request.app.state, "job_store", None)
+    if store is None:
+        raise HTTPException(status_code=503, detail="jobs are not available")
+    return store
+
+
+def _approvals(request: Request) -> ApprovalStore:
+    store = getattr(request.app.state, "approval_store", None)
     if store is None:
         raise HTTPException(status_code=503, detail="jobs are not available")
     return store
@@ -50,10 +71,59 @@ async def list_jobs(request: Request, limit: int = 50) -> list[JobView]:
 @jobs_router.get("/api/jobs/{job_id}")
 async def job_detail(request: Request, job_id: str) -> JobDetail:
     store = _store(request)
+    approvals = _approvals(request)
     job = await store.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="unknown job")
-    return JobDetail(job=job, events=await store.events(job_id))
+    return JobDetail(
+        job=job,
+        events=await store.events(job_id),
+        approvals=await approvals.for_job(job_id),
+        artifacts=await approvals.artifacts_for_job(job_id),
+    )
+
+
+@jobs_router.post("/api/jobs/{job_id}/approvals/{approval_id}")
+async def decide_approval(
+    request: Request, job_id: str, approval_id: str, body: DecisionBody
+) -> ApprovalView:
+    """Record the decision once, then wake the runner; the gated action
+    executes only after the tool re-reads this row (ADR-007)."""
+    store = _store(request)
+    approvals = _approvals(request)
+    approval = await approvals.get(approval_id)
+    if approval is None or approval.job_id != job_id:
+        raise HTTPException(status_code=404, detail="unknown approval")
+    decided = await approvals.decide(approval_id, body.decision)
+    if decided is None:
+        raise HTTPException(status_code=409, detail="already decided")
+    await store.append_event(
+        job_id,
+        "approval_decided",
+        {"approval_id": approval_id, "decision": body.decision},
+        actor="user",
+    )
+    worker = getattr(request.app.state, "job_worker", None)
+    if worker is not None:
+        await worker.resume(job_id)
+    return decided
+
+
+@jobs_router.get("/api/jobs/{job_id}/artifacts/{artifact_id}")
+async def artifact_content(request: Request, job_id: str, artifact_id: str) -> PlainTextResponse:
+    store = _store(request)
+    approvals = _approvals(request)
+    job = await store.get(job_id)
+    artifact = await approvals.get_artifact(artifact_id)
+    if job is None or artifact is None or artifact.job_id != job_id:
+        raise HTTPException(status_code=404, detail="unknown artifact")
+    root = request.app.state.settings.jobs_workspace_dir
+    workspace = job_workspace(root, job.workspace)
+    try:
+        content = guarded_read(workspace, artifact.path)
+    except WorkspaceViolation as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return PlainTextResponse(content, media_type=artifact.content_type)
 
 
 @jobs_router.post("/api/jobs/{job_id}/cancel")

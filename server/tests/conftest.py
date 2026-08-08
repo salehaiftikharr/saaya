@@ -45,3 +45,26 @@ async def engine() -> AsyncIterator[AsyncEngine]:
         for table in reversed(Base.metadata.sorted_tables):
             await connection.execute(table.delete())
     await test_engine.dispose()
+
+
+@pytest.fixture()
+async def saver(engine: AsyncEngine):
+    """An AsyncPostgresSaver over the test database, for checkpoint tests."""
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+    from psycopg import AsyncConnection
+    from psycopg.rows import DictRow, dict_row
+    from psycopg_pool import AsyncConnectionPool
+
+    settings = Settings()
+    base = settings.database_url.rsplit("/", 1)[0]
+    pool: AsyncConnectionPool[AsyncConnection[DictRow]] = AsyncConnectionPool(
+        conninfo=f"{base}/{TEST_DATABASE}",
+        open=False,
+        connection_class=AsyncConnection[DictRow],
+        kwargs={"autocommit": True, "row_factory": dict_row},
+    )
+    await pool.open()
+    checkpointer = AsyncPostgresSaver(pool)
+    await checkpointer.setup()
+    yield checkpointer
+    await pool.close()

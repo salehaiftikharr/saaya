@@ -3,7 +3,6 @@ the checkpointed runner, including resume across runner instances, which is
 the property that makes restart survival real."""
 
 import asyncio
-from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
@@ -29,22 +28,6 @@ from saaya.jobs.workspace import (
 )
 
 TEST_DATABASE = "saaya_test"  # kept in lockstep with conftest.py
-
-
-@pytest.fixture()
-async def saver(engine: AsyncEngine) -> AsyncIterator[AsyncPostgresSaver]:
-    base = Settings().database_url.rsplit("/", 1)[0]
-    pool: AsyncConnectionPool[AsyncConnection[DictRow]] = AsyncConnectionPool(
-        conninfo=f"{base}/{TEST_DATABASE}",
-        open=False,
-        connection_class=AsyncConnection[DictRow],
-        kwargs={"autocommit": True, "row_factory": dict_row},
-    )
-    await pool.open()
-    checkpointer = AsyncPostgresSaver(pool)
-    await checkpointer.setup()
-    yield checkpointer
-    await pool.close()
 
 
 # --- store ---------------------------------------------------------------

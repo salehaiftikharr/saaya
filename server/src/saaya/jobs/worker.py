@@ -67,9 +67,10 @@ class JobWorker:
         task.add_done_callback(self._tasks.discard)
 
     async def resume(self, job_id: str) -> bool:
-        """Kick a retrying job immediately (the retry endpoint's path)."""
+        """Kick a parked job immediately: retry, or an approval decision."""
         job = await self._store.get(job_id)
-        if job is None or job.state not in (states.RETRYING, states.QUEUED):
+        resumable = (states.RETRYING, states.QUEUED, states.WAITING_APPROVAL)
+        if job is None or job.state not in resumable:
             return False
         self._spawn(job)
         return True

@@ -12,7 +12,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 
 from saaya.jobs import states
-from saaya.jobs.store import JobStore, JobView
+from saaya.jobs.store import ApprovalStore, JobStore, JobView
 from saaya.jobs.workspace import job_workspace, list_files
 
 # A step is data: what to do, and which files must exist afterwards. The
@@ -49,18 +49,21 @@ class JobRunner:
         workspace_root: Path,
         planner: Planner,
         executor: Executor,
+        approvals: ApprovalStore | None = None,
     ) -> None:
         self._store = store
         self._checkpointer = checkpointer
         self._root = workspace_root
         self._planner = planner
         self._executor = executor
+        self._approvals = approvals
 
     def _graph(self, job_id: str) -> Any:
         store = self._store
         planner = self._planner
         executor = self._executor
         root = self._root
+        approvals = self._approvals
 
         async def plan_node(state: JobRunState) -> JobRunState:
             job = await store.get(job_id)
@@ -112,6 +115,12 @@ class JobRunner:
             )
             try:
                 summary = await executor(step, workspace, job)
+                if approvals is not None and await approvals.pending(job_id) is not None:
+                    # The step asked for a gated action; hold here. On
+                    # resume the whole step re-runs and the tool consumes
+                    # the recorded decision (ADR-007).
+                    await store.transition(job_id, states.WAITING_APPROVAL)
+                    raise JobHalt(states.WAITING_APPROVAL)
                 missing = [
                     path for path in step.get("creates", []) if not (workspace / path).is_file()
                 ]
@@ -172,7 +181,7 @@ class JobRunner:
         graph = self._graph(job.id)
         config = {"configurable": {"thread_id": f"job:{job.id}"}}
         snapshot = await graph.aget_state(config)
-        if job.state == states.RETRYING:
+        if job.state in (states.RETRYING, states.WAITING_APPROVAL):
             await self._store.transition(job.id, states.RUNNING)
         try:
             if snapshot.values:

@@ -13,7 +13,7 @@ from sqlalchemy import Connection, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import Session
 
-from saaya.db.models import Job, JobEvent
+from saaya.db.models import Job, JobApproval, JobArtifact, JobEvent
 from saaya.jobs import states
 from saaya.jobs.states import check_transition
 
@@ -280,3 +280,223 @@ class JobStore:
                 session.commit()
 
         await self._run(_do)
+
+
+class ApprovalView(BaseModel):
+    id: str
+    job_id: str
+    kind: str
+    preview: str
+    payload: dict[str, object]
+    requested_at: str
+    decided_at: str | None
+    decision: str | None
+    consumed_at: str | None
+
+
+class ArtifactView(BaseModel):
+    id: str
+    job_id: str
+    path: str
+    kind: str
+    title: str
+    content_type: str
+    size: int
+    created_at: str
+
+
+def _approval_view(row: JobApproval) -> ApprovalView:
+    return ApprovalView(
+        id=str(row.id),
+        job_id=str(row.job_id),
+        kind=row.kind,
+        preview=row.preview,
+        payload=json.loads(row.payload_json),
+        requested_at=row.requested_at.isoformat(),
+        decided_at=row.decided_at.isoformat() if row.decided_at else None,
+        decision=row.decision,
+        consumed_at=row.consumed_at.isoformat() if row.consumed_at else None,
+    )
+
+
+def _artifact_view(row: JobArtifact) -> ArtifactView:
+    return ArtifactView(
+        id=str(row.id),
+        job_id=str(row.job_id),
+        path=row.path,
+        kind=row.kind,
+        title=row.title,
+        content_type=row.content_type,
+        size=row.size,
+        created_at=row.created_at.isoformat(),
+    )
+
+
+class ApprovalStore:
+    """Approval and artifact persistence, kept beside JobStore so the runner
+    wires one seam. Decisions are recorded once; execution consumes them."""
+
+    def __init__(self, engine: AsyncEngine, clock: Clock = utc_now) -> None:
+        self._engine = engine
+        self._clock = clock
+
+    async def _run(self, fn: Callable[[Connection], T]) -> T:
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(fn)
+
+    async def create_approval(
+        self, job_id: str, kind: str, preview: str, payload: dict[str, object]
+    ) -> ApprovalView:
+        def _do(sync_conn: Connection) -> ApprovalView:
+            with Session(bind=sync_conn) as session:
+                row = JobApproval(
+                    job_id=uuid.UUID(job_id),
+                    kind=kind,
+                    preview=preview,
+                    payload_json=json.dumps(payload),
+                )
+                session.add(row)
+                session.commit()
+                session.refresh(row)
+                return _approval_view(row)
+
+        return await self._run(_do)
+
+    async def decide(self, approval_id: str, decision: str) -> ApprovalView | None:
+        """Record a decision exactly once; a second decision is refused by
+        returning None so the route can 409."""
+        now = self._clock()
+
+        def _do(sync_conn: Connection) -> ApprovalView | None:
+            with Session(bind=sync_conn) as session:
+                row = session.get(JobApproval, uuid.UUID(approval_id), with_for_update=True)
+                if row is None or row.decision is not None:
+                    return None
+                row.decision = decision
+                row.decided_at = now
+                session.commit()
+                session.refresh(row)
+                return _approval_view(row)
+
+        return await self._run(_do)
+
+    async def get(self, approval_id: str) -> ApprovalView | None:
+        def _do(sync_conn: Connection) -> ApprovalView | None:
+            with Session(bind=sync_conn) as session:
+                row = session.get(JobApproval, uuid.UUID(approval_id))
+                return _approval_view(row) if row else None
+
+        return await self._run(_do)
+
+    async def for_job(self, job_id: str) -> list[ApprovalView]:
+        def _do(sync_conn: Connection) -> list[ApprovalView]:
+            with Session(bind=sync_conn) as session:
+                rows = session.scalars(
+                    select(JobApproval)
+                    .where(JobApproval.job_id == uuid.UUID(job_id))
+                    .order_by(JobApproval.requested_at)
+                ).all()
+                return [_approval_view(row) for row in rows]
+
+        return await self._run(_do)
+
+    async def pending(self, job_id: str) -> ApprovalView | None:
+        def _do(sync_conn: Connection) -> ApprovalView | None:
+            with Session(bind=sync_conn) as session:
+                row = session.scalars(
+                    select(JobApproval)
+                    .where(
+                        JobApproval.job_id == uuid.UUID(job_id),
+                        JobApproval.decision.is_(None),
+                    )
+                    .order_by(JobApproval.requested_at)
+                    .limit(1)
+                ).first()
+                return _approval_view(row) if row else None
+
+        return await self._run(_do)
+
+    async def decided_unconsumed(
+        self, job_id: str, payload: dict[str, object]
+    ) -> ApprovalView | None:
+        """The execution-side check (ADR-007): an exact-payload match that
+        has a decision and has not been consumed yet."""
+        wanted = json.dumps(payload)
+
+        def _do(sync_conn: Connection) -> ApprovalView | None:
+            with Session(bind=sync_conn) as session:
+                rows = session.scalars(
+                    select(JobApproval)
+                    .where(
+                        JobApproval.job_id == uuid.UUID(job_id),
+                        JobApproval.decision.is_not(None),
+                        JobApproval.consumed_at.is_(None),
+                    )
+                    .order_by(JobApproval.requested_at)
+                ).all()
+                for row in rows:
+                    if row.payload_json == wanted:
+                        return _approval_view(row)
+                return None
+
+        return await self._run(_do)
+
+    async def consume(self, approval_id: str) -> None:
+        now = self._clock()
+
+        def _do(sync_conn: Connection) -> None:
+            with Session(bind=sync_conn) as session:
+                row = session.get(JobApproval, uuid.UUID(approval_id), with_for_update=True)
+                if row is not None and row.consumed_at is None:
+                    row.consumed_at = now
+                    session.commit()
+
+        await self._run(_do)
+
+    async def create_artifact(
+        self,
+        job_id: str,
+        path: str,
+        kind: str,
+        title: str,
+        content_type: str,
+        size: int,
+        event_seq: int,
+    ) -> ArtifactView:
+        def _do(sync_conn: Connection) -> ArtifactView:
+            with Session(bind=sync_conn) as session:
+                row = JobArtifact(
+                    job_id=uuid.UUID(job_id),
+                    path=path,
+                    kind=kind,
+                    title=title,
+                    content_type=content_type,
+                    size=size,
+                    event_seq=event_seq,
+                )
+                session.add(row)
+                session.commit()
+                session.refresh(row)
+                return _artifact_view(row)
+
+        return await self._run(_do)
+
+    async def artifacts_for_job(self, job_id: str) -> list[ArtifactView]:
+        def _do(sync_conn: Connection) -> list[ArtifactView]:
+            with Session(bind=sync_conn) as session:
+                rows = session.scalars(
+                    select(JobArtifact)
+                    .where(JobArtifact.job_id == uuid.UUID(job_id))
+                    .order_by(JobArtifact.created_at)
+                ).all()
+                return [_artifact_view(row) for row in rows]
+
+        return await self._run(_do)
+
+    async def get_artifact(self, artifact_id: str) -> ArtifactView | None:
+        def _do(sync_conn: Connection) -> ArtifactView | None:
+            with Session(bind=sync_conn) as session:
+                row = session.get(JobArtifact, uuid.UUID(artifact_id))
+                return _artifact_view(row) if row else None
+
+        return await self._run(_do)

@@ -158,3 +158,42 @@ class JobEvent(Base):
     actor: Mapped[str] = mapped_column(String(16))
     type: Mapped[str] = mapped_column(String(40))
     payload_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class JobArtifact(Base):
+    """A durable, named output of a Job: a registered workspace file plus
+    provenance. Immutable once recorded; revisions are new rows (ADR-008)."""
+
+    __tablename__ = "job_artifacts"
+    __table_args__ = (Index("ix_job_artifacts_job_id", "job_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    path: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(String(16), default="file")
+    title: Mapped[str] = mapped_column(String(120))
+    content_type: Mapped[str] = mapped_column(String(64), default="text/markdown")
+    size: Mapped[int] = mapped_column(Integer, default=0)
+    event_seq: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class JobApproval(Base):
+    """One gated action awaiting or holding a human decision. The runner
+    executes the action only after re-reading an approved row here; the check
+    lives next to the execution, not in any client (ADR-007)."""
+
+    __tablename__ = "job_approvals"
+    __table_args__ = (Index("ix_job_approvals_job_id", "job_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    kind: Mapped[str] = mapped_column(String(32))
+    preview: Mapped[str] = mapped_column(Text)
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    requested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    decision: Mapped[str | None] = mapped_column(String(16), default=None)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)

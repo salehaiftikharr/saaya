@@ -41,7 +41,35 @@ export type JobEvent = {
 	payload: Record<string, unknown>;
 };
 
-export type JobDetail = { job: JobInfo; events: JobEvent[] };
+export type Approval = {
+	id: string;
+	job_id: string;
+	kind: string;
+	preview: string;
+	payload: Record<string, unknown>;
+	requested_at: string;
+	decided_at: string | null;
+	decision: "approved" | "rejected" | null;
+	consumed_at: string | null;
+};
+
+export type Artifact = {
+	id: string;
+	job_id: string;
+	path: string;
+	kind: string;
+	title: string;
+	content_type: string;
+	size: number;
+	created_at: string;
+};
+
+export type JobDetail = {
+	job: JobInfo;
+	events: JobEvent[];
+	approvals: Approval[];
+	artifacts: Artifact[];
+};
 
 export const LIVE_STATES: ReadonlySet<JobState> = new Set([
 	"queued",
@@ -94,6 +122,23 @@ export async function retryJob(id: string): Promise<void> {
 	if (!response.ok) throw new Error("This job cannot be retried from here.");
 }
 
+export async function decideApproval(
+	jobId: string,
+	approvalId: string,
+	decision: "approved" | "rejected",
+): Promise<void> {
+	const response = await fetch(`/api/jobs/${jobId}/approvals/${approvalId}`, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ decision }),
+	});
+	if (!response.ok) throw new Error("This approval was already decided.");
+}
+
+export function artifactUrl(jobId: string, artifactId: string): string {
+	return `/api/jobs/${jobId}/artifacts/${artifactId}`;
+}
+
 export function jobEventsUrl(id: string, afterSeq: number): string {
 	return `/api/jobs/${id}/events?after_seq=${afterSeq}`;
 }
@@ -120,6 +165,18 @@ export function eventLabel(event: JobEvent): string {
 			return "A workspace boundary held";
 		case "job_recovered":
 			return "Recovered after a restart";
+		case "approval_requested":
+			return "Waiting on your approval";
+		case "approval_decided":
+			return `You ${event.payload.decision === "approved" ? "approved" : "rejected"} the request`;
+		case "approval_accepted":
+			return "Approved action ran";
+		case "approval_rejected":
+			return "Rejected action was skipped";
+		case "command_executed":
+			return "Ran a command";
+		case "artifact_created":
+			return `Artifact: ${event.payload.title ?? event.payload.path}`;
 		case "worker_error":
 			return "The worker hit an error";
 		case "job_completed":

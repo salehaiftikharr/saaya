@@ -6,6 +6,7 @@ import {
 	BriefcaseBusiness,
 	History,
 	MessageSquarePlus,
+	PanelRight,
 	Wrench,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -26,6 +27,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { WorkPanel } from "@/components/work/work-panel";
+import { useThreadJobs, Workbench } from "@/components/work/workbench";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
@@ -54,6 +56,21 @@ export function ChatApp() {
 	const [nearBottom, setNearBottom] = useState(true);
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 	const scrollHostRef = useRef<HTMLDivElement | null>(null);
+
+	// The workbench opens when the conversation owns work and reveals itself
+	// when work starts mid-thread; a close wins until the thread changes.
+	const threadJobs = useThreadJobs(activeThread);
+	const [benchOpen, setBenchOpen] = useState(false);
+	const benchClosed = useRef(false);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: this is a reset-on-thread-change effect; the thread id is the trigger, not an input
+	useEffect(() => {
+		benchClosed.current = false;
+		setBenchOpen(false);
+	}, [activeThread]);
+	useEffect(() => {
+		if (threadJobs.length > 0 && !benchClosed.current) setBenchOpen(true);
+		if (threadJobs.length === 0) setBenchOpen(false);
+	}, [threadJobs.length]);
 
 	const viewport = () =>
 		scrollHostRef.current?.querySelector<HTMLElement>(
@@ -192,6 +209,20 @@ export function ChatApp() {
 						</span>
 					</div>
 					<div className="flex items-center gap-1">
+						{view === "chat" && threadJobs.length > 0 && !benchOpen && (
+							<Button
+								variant="ghost"
+								size="icon"
+								className="hidden lg:inline-flex"
+								aria-label="Open the workbench"
+								onClick={() => {
+									benchClosed.current = false;
+									setBenchOpen(true);
+								}}
+							>
+								<PanelRight className="size-4" />
+							</Button>
+						)}
 						<Sheet>
 							<SheetTrigger
 								render={
@@ -373,6 +404,15 @@ export function ChatApp() {
 					</>
 				)}
 			</main>
+			{view === "chat" && benchOpen && (
+				<Workbench
+					jobs={threadJobs}
+					onClose={() => {
+						benchClosed.current = true;
+						setBenchOpen(false);
+					}}
+				/>
+			)}
 		</div>
 	);
 }

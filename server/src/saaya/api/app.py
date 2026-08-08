@@ -63,13 +63,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
             tool_registry = ToolRegistry(engine, resolved.workspace_dir / "tools")
 
+            from saaya.jobs.store import ApprovalStore as _ApprovalStore
+            from saaya.jobs.store import JobStore as _JobStore
+            from saaya.jobs.tools import make_check_jobs_tool, make_start_job_tool
+
+            _chat_jobs = _JobStore(engine)
+            chat_job_tools = [
+                make_start_job_tool(_chat_jobs),
+                make_check_jobs_tool(_chat_jobs, _ApprovalStore(engine)),
+            ]
+
             async def rebuild_agent() -> None:
                 # Procedural memory rides the compiled system prompt and the
                 # active tool set is part of the graph, so reflection applies,
                 # rollbacks, and tool lifecycle changes all rebuild it.
                 active = await tool_registry.active_tools()
                 app.state.agent = build_agent(
-                    resolved, saver, memory_store, external_tools, tool_registry, active
+                    resolved,
+                    saver,
+                    memory_store,
+                    [*external_tools, *chat_job_tools],
+                    tool_registry,
+                    active,
                 )
 
             await rebuild_agent()
@@ -87,11 +102,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 app, engine, activity, resolved.heartbeat_quiet_seconds
             )
             scheduler = start_scheduler(heartbeat, resolved.heartbeat_interval_seconds)
-            from saaya.jobs.store import JobStore
+            from saaya.jobs.store import ApprovalStore, JobStore
             from saaya.jobs.worker import JobWorker
 
             job_store = JobStore(engine)
+            approval_store = ApprovalStore(engine)
             app.state.job_store = job_store
+            app.state.approval_store = approval_store
             job_worker = None
             if resolved.jobs_worker_enabled and resolved.claude_api_key:
                 from saaya.jobs.agents import build_executor, build_planner
@@ -102,7 +119,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     saver,
                     resolved.jobs_workspace_dir,
                     planner=build_planner(resolved),
-                    executor=build_executor(resolved, job_store),
+                    executor=build_executor(resolved, job_store, approval_store),
+                    approvals=approval_store,
                 )
                 job_worker = JobWorker(job_store, job_runner)
                 await job_worker.start()

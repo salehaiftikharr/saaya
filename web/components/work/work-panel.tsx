@@ -4,10 +4,13 @@ import { ArrowLeft, FileText, OctagonX, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ApprovalCard } from "@/components/work/approval-card";
+import { ArtifactList } from "@/components/work/artifact-list";
 import { JobStateBadge } from "@/components/work/job-state-badge";
 import { JobTimeline } from "@/components/work/job-timeline";
 import {
 	cancelJob,
+	decideApproval,
 	fetchJob,
 	type JobDetail,
 	type JobInfo,
@@ -76,8 +79,30 @@ export function WorkPanel() {
 		[open, loadList],
 	);
 
+	const decide = useCallback(
+		async (approvalId: string, decision: "approved" | "rejected") => {
+			const id = openId.current;
+			if (!id) return;
+			try {
+				await decideApproval(id, approvalId, decision);
+				toast(
+					decision === "approved"
+						? "Approved; the job continues"
+						: "Rejected; Saaya will work around it",
+				);
+			} catch (failure) {
+				toast.error(
+					String(failure instanceof Error ? failure.message : failure),
+				);
+			} finally {
+				open(id);
+			}
+		},
+		[open],
+	);
+
 	if (detail) {
-		const { job, events } = detail;
+		const { job, events, approvals, artifacts } = detail;
 		const files = events.findLast((e) => e.type === "job_completed")?.payload
 			.files as { path: string; size: number }[] | undefined;
 		return (
@@ -130,6 +155,21 @@ export function WorkPanel() {
 						</Button>
 					)}
 				</div>
+				{approvals
+					.filter((approval) => approval.decision === null)
+					.map((approval) => (
+						<ApprovalCard
+							key={approval.id}
+							approval={approval}
+							onDecide={decide}
+						/>
+					))}
+				{artifacts.length > 0 && (
+					<section aria-label="Artifacts" className="flex flex-col gap-2">
+						<h3 className="type-eyebrow">Artifacts</h3>
+						<ArtifactList artifacts={artifacts} />
+					</section>
+				)}
 				<section aria-label="What happened" className="flex flex-col gap-2">
 					<h3 className="type-eyebrow">What happened</h3>
 					<JobTimeline events={events} />
