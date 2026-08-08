@@ -16,11 +16,28 @@ keeping the echo geometry; nothing else in the product needs to change.
 ## The mark
 
 `saaya-mark.svg` (light surfaces) and `saaya-mark-dark.svg` (dark surfaces).
-A body and its echo: a solid ink circle with a dusk-colored twin offset behind
-it toward the lower right. Most of the echo hides behind the body; what
-remains is a crescent, the visible edge of the shadow. The two circles are
-identical, which is the point: the shadow is the same shape as the thing
-itself, one step behind.
+A body and its echo: a solid ink circle with a dusk-colored twin offset
+behind it toward the lower right.
+
+Why this form: Saaya is the presence that accompanies you. The body is your
+work, the present moment; the echo is Saaya - the same shape, one step
+behind, holding what came before. The echo never leads and never leaves.
+Identical geometry is the argument: a shadow is not a different thing, it is
+your own shape carried along. Offset toward the lower right because that is
+where a shadow falls when the light reads left-to-right, the direction of
+work in progress. The crescent that remains visible is deliberate restraint:
+presence you can see without it demanding attention.
+
+The same grammar recurs through the product: the echo trail while Saaya
+works, the offset drop-shadow on the story page's hero mark, the continuity
+strip carrying past context under the current conversation. The mark is the
+system, small.
+
+Explored refinement (recorded, not yet adopted): tightening the echo offset
+from 10/64 to 8/64 of the canvas and raising its opacity from 0.9 to 1.0
+reads better below 20px but flattens the layered-depth feel at hero sizes;
+a size-dependent pair (tight echo for the favicon form, current geometry
+above 24px) is the likely v2 and would change only the SVG files.
 
 - The ink circle carries the theme's ink color; the echo is always dusk.
 - At 16 pixels (`favicon.svg`) both circles survive; the favicon's ink adapts

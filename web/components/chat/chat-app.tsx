@@ -197,8 +197,7 @@ export function ChatApp() {
 										restarts, and what Saaya learns carries forward.
 									</p>
 								</div>
-								<div
-									role="group"
+								<fieldset
 									className="flex flex-wrap justify-center gap-2"
 									aria-label="Suggestions"
 								>
@@ -218,7 +217,7 @@ export function ChatApp() {
 											{suggestion}
 										</Button>
 									))}
-								</div>
+								</fieldset>
 							</section>
 						) : (
 							<ScrollArea className="flex-1">

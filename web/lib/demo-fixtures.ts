@@ -133,3 +133,37 @@ export const demoHealth = `{
   "status": "ok",
   "surfaces": { "web": "ok", "slack": "connected", "mcp": "enabled" }
 }`;
+
+export const demoDiff = {
+	file: "how-i-work.md",
+	removed: ["- Release notes are drafted after the tag is pushed."],
+	added: [
+		"- Release notes go out before the version tag is pushed.",
+		"- Maya Chen reviews release notes before they ship.",
+	],
+} as const;
+
+export const demoQuietSummary = [
+	{ label: "Heartbeats this week", value: "21" },
+	{ label: "Changes applied", value: "2" },
+	{ label: "Needed your attention", value: "0" },
+] as const;
+
+export const demoChannelContinuity = [
+	{
+		surface: "Web",
+		line: "Noor: Draft the Atlas 2.1 release notes from this changelog.",
+		reply:
+			"Saaya: Drafted. Highlights, Fixes, Upgrade notes; queued for Maya's review.",
+	},
+	{
+		surface: "Slack",
+		line: "Noor: Did Maya sign off on the notes?",
+		reply: "Saaya: Yes, an hour ago. The tag is now safe to push.",
+	},
+	{
+		surface: "MCP",
+		line: 'ask_saaya("What is left before the 2.1 tag?")',
+		reply: '"Nothing. Notes shipped after Maya\'s review; push the tag."',
+	},
+] as const;

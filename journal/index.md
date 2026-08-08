@@ -40,6 +40,7 @@ factual, linked, and never created to inflate documentation.
 - [P-017: Fixture privacy scrub](progress/P-017-fixture-privacy.md)
 - [P-018: Privacy correction and the privacy gate](progress/P-018-privacy-correction.md)
 - [P-019: CI green from a fresh clone, and the conversation shell](progress/P-019-ci-and-shell.md)
+- [P-020: Composition variety and the mark rationale](progress/P-020-composition.md)
 
 ## Decisions
 
