@@ -47,6 +47,7 @@ factual, linked, and never created to inflate documentation.
 - [P-024: Conversation identity, history, and the live header](progress/P-024-conversation-identity.md)
 - [P-025: Marketing pass 1, the frame and the living mark](progress/P-025-marketing-frame.md)
 - [P-026: The application shell scroll model](progress/P-026-scroll-model.md)
+- [P-027: Titles, restored tool activity, dev-thread hygiene, mark verification](progress/P-027-continuation.md)
 
 ## Decisions
 

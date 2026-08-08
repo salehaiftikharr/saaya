@@ -14,9 +14,9 @@ def test_maps_user_and_assistant_turns() -> None:
     transcript = to_transcript(
         [FakeMessage("human", text="hello"), FakeMessage("ai", text="hi there")]
     )
-    assert [m.model_dump() for m in transcript] == [
-        {"role": "user", "text": "hello"},
-        {"role": "assistant", "text": "hi there"},
+    assert [(m.role, m.text) for m in transcript] == [
+        ("user", "hello"),
+        ("assistant", "hi there"),
     ]
 
 
@@ -68,3 +68,27 @@ def test_context_query_is_none_for_empty_threads() -> None:
     from saaya.api.history import context_query
 
     assert context_query([]) is None
+
+
+def test_tool_activity_rides_the_assistant_turn() -> None:
+    class ToolCallMessage(FakeMessage):
+        def __init__(self) -> None:
+            super().__init__("ai", text="")
+            self.tool_calls = [{"id": "c1", "name": "reverse_text"}]
+
+    class ToolResult(FakeMessage):
+        def __init__(self) -> None:
+            super().__init__("tool", text="6eborp")
+            self.tool_call_id = "c1"
+
+    transcript = to_transcript(
+        [
+            FakeMessage("human", text="reverse probe6"),
+            ToolCallMessage(),
+            ToolResult(),
+            FakeMessage("ai", text="6eborp"),
+        ]
+    )
+    assert transcript[1].role == "assistant"
+    assert transcript[1].activities[0].name == "reverse_text"
+    assert transcript[1].activities[0].output_preview == "6eborp"

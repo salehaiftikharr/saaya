@@ -12,4 +12,5 @@ export type WireEvent =
 export interface TranscriptMessage {
 	role: "user" | "assistant";
 	text: string;
+	activities?: { name: string; output_preview: string }[];
 }

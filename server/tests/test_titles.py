@@ -72,3 +72,20 @@ def test_thread_source_classification() -> None:
 def test_slack_mention_tokens_are_markup_not_words() -> None:
     assert derive_title("hello <@U0BOTID>") == FALLBACK_TITLE
     assert derive_title("<@U0BOTID> summarize the standup notes") == ("Summarize the standup notes")
+
+
+def test_command_prompts_keep_only_the_first_clause() -> None:
+    assert (
+        derive_title("reverse_text the word probe6, just the result")
+        == "Reverse_text the word probe6"
+    )
+    assert (
+        derive_title("draft the release notes: use the new format please")
+        == "Draft the release notes"
+    )
+
+
+def test_short_first_clauses_do_not_truncate_meaning() -> None:
+    assert derive_title("quick check, what changed in staging yesterday") == (
+        "Quick check, what changed in staging yesterday"
+    )

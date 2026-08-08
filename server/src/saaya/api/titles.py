@@ -55,6 +55,12 @@ def derive_title(text: str) -> str:
     if not re.search(r"[a-zA-Z0-9]", cleaned):
         return FALLBACK_TITLE
 
+    # A command's first clause is its identity; trailing qualifiers like
+    # ", just the result" are noise when the clause stands alone.
+    clause = re.split(r"[.,:;!?](?=\s|$)", cleaned, maxsplit=1)[0].strip()
+    if len(clause.split()) >= 3:
+        cleaned = clause
+
     words = cleaned.split()
     candidate = " ".join(words[:MAX_TITLE_WORDS])
     truncated = False

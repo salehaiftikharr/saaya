@@ -9,9 +9,15 @@ from typing import Any, Literal, cast
 from pydantic import BaseModel
 
 
+class TranscriptActivity(BaseModel):
+    name: str
+    output_preview: str
+
+
 class TranscriptMessage(BaseModel):
     role: Literal["user", "assistant"]
     text: str
+    activities: list[TranscriptActivity] = []
 
 
 def _text_of(message: Any) -> str:
@@ -38,16 +44,37 @@ def _text_of(message: Any) -> str:
 
 
 def to_transcript(messages: list[Any]) -> list[TranscriptMessage]:
-    """User and assistant text only; tool traffic is not part of the transcript."""
+    """User and assistant turns; tool calls and their result previews ride
+    the assistant turn that produced them, so a restored conversation shows
+    the same work the live stream did."""
     transcript: list[TranscriptMessage] = []
+    pending: list[TranscriptActivity] = []
+    tool_names: dict[str, str] = {}
     for message in messages:
         kind = getattr(message, "type", "")
         if kind == "human":
+            pending = []
             transcript.append(TranscriptMessage(role="user", text=_text_of(message)))
         elif kind == "ai":
+            for raw_call in cast("list[Any]", getattr(message, "tool_calls", None) or []):
+                if not isinstance(raw_call, dict):
+                    continue
+                call = cast("dict[str, Any]", raw_call)
+                tool_names[str(call.get("id", ""))] = str(call.get("name", "tool"))
             text = _text_of(message)
             if text:
-                transcript.append(TranscriptMessage(role="assistant", text=text))
+                transcript.append(
+                    TranscriptMessage(role="assistant", text=text, activities=pending)
+                )
+                pending = []
+        elif kind == "tool":
+            call_id = str(getattr(message, "tool_call_id", ""))
+            pending.append(
+                TranscriptActivity(
+                    name=tool_names.get(call_id, "tool"),
+                    output_preview=_text_of(message)[:200],
+                )
+            )
     return transcript
 
 

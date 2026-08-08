@@ -22,7 +22,12 @@ function fromTranscript(entries: TranscriptMessage[]): ChatMessage[] {
 		id: `history-${index}`,
 		role: entry.role,
 		text: entry.text,
-		activities: [],
+		activities: (entry.activities ?? []).map((activity, activityIndex) => ({
+			id: `history-${index}-${activityIndex}`,
+			name: activity.name,
+			state: "done" as const,
+			outputPreview: activity.output_preview,
+		})),
 	}));
 }
 
