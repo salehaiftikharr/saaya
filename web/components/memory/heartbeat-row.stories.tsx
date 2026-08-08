@@ -64,3 +64,30 @@ export const QuietRun: Story = {
 		},
 	},
 };
+
+export const JustArrived: Story = {
+	args: {
+		run: {
+			name: "reflect",
+			outcome: "completed",
+			detail: "898c85db: applied",
+			started_at: "2026-08-08T08:00:00Z",
+			finished_at: "2026-08-08T08:00:01Z",
+		},
+		justArrived: true,
+	},
+};
+
+export const ReducedMotionArrival: Story = {
+	globals: { reducedMotion: "reduce" },
+	args: {
+		run: {
+			name: "reflect",
+			outcome: "completed",
+			detail: "898c85db: applied",
+			started_at: "2026-08-08T08:00:00Z",
+			finished_at: "2026-08-08T08:00:01Z",
+		},
+		justArrived: true,
+	},
+};

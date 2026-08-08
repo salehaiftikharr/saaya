@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { readWireEvents } from "@/lib/sse";
 import type { TranscriptMessage } from "@/lib/wire-events";
 import type { ContextItem } from "./continuity-strip";
@@ -129,6 +130,9 @@ export function useChat() {
 				const message =
 					error instanceof Error ? error.message : "The request failed.";
 				updateLast((m) => ({ ...m, error: message }));
+				toast("Connection interrupted", {
+					description: "The turn ended early; send again to continue.",
+				});
 			} finally {
 				setStatus("idle");
 			}

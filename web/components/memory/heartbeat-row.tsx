@@ -22,7 +22,13 @@ export function heartbeatOutcomeSentence(run: HeartbeatRunInfo): string {
 	return "Saaya looked at recent work; nothing needed to change.";
 }
 
-export function HeartbeatRow({ run }: { run: HeartbeatRunInfo }) {
+export function HeartbeatRow({
+	run,
+	justArrived = false,
+}: {
+	run: HeartbeatRunInfo;
+	justArrived?: boolean;
+}) {
 	const failed = run.outcome === "failed";
 	return (
 		<li className="flex items-start gap-3 rounded-lg border bg-card p-3">
@@ -31,6 +37,7 @@ export function HeartbeatRow({ run }: { run: HeartbeatRunInfo }) {
 				className={cn(
 					"mt-0.5 size-4 shrink-0",
 					failed ? "text-destructive" : "text-primary",
+					justArrived && "animate-heartbeat-once",
 				)}
 			/>
 			<div className="min-w-0 flex-1">

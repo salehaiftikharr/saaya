@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ToolRow, type ToolView } from "./tool-row";
 
 export function ToolsPanel() {
@@ -31,6 +32,11 @@ export function ToolsPanel() {
 				});
 				if (!response.ok) throw new Error(`status ${response.status}`);
 				load();
+				toast(
+					action === "activate"
+						? `${name} is approved and ready`
+						: `${name} is disabled`,
+				);
 			} catch {
 				setError(`Could not ${action} ${name}.`);
 			} finally {

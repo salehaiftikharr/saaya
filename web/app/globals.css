@@ -187,3 +187,24 @@
 		}
 	}
 }
+
+/* One restrained pulse for a newly arrived heartbeat; never loops. */
+@keyframes heartbeat-once {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	35% {
+		transform: scale(1.18);
+	}
+}
+@layer components {
+	.animate-heartbeat-once {
+		animation: heartbeat-once 0.6s ease-out 1;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.animate-heartbeat-once {
+			animation: none;
+		}
+	}
+}

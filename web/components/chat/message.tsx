@@ -21,7 +21,7 @@ export function Message({
 	if (message.role === "user") {
 		return (
 			<div className="flex justify-end">
-				<p className="max-w-[80%] whitespace-pre-wrap rounded-xl bg-secondary px-3.5 py-2 text-secondary-foreground text-sm">
+				<p className="max-w-[80%] whitespace-pre-wrap rounded-xl bg-secondary px-3.5 py-2 text-secondary-foreground text-sm motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:animate-in">
 					{message.text}
 				</p>
 			</div>

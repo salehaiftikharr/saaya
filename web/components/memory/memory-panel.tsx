@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	fetchHeartbeats,
@@ -19,6 +20,7 @@ export function MemoryPanel() {
 	const [heartbeats, setHeartbeats] = useState<HeartbeatRunInfo[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const seenLatestRun = useRef<string | null>(null);
 
 	const load = useCallback(() => {
 		setError(null);
@@ -30,7 +32,10 @@ export function MemoryPanel() {
 				);
 			});
 		fetchHeartbeats()
-			.then(setHeartbeats)
+			.then((runs) => {
+				setHeartbeats(runs);
+				if (runs[0]) seenLatestRun.current ??= runs[0].started_at;
+			})
 			.catch(() => setHeartbeats([]));
 	}, []);
 
@@ -44,6 +49,9 @@ export function MemoryPanel() {
 			try {
 				await rollbackTo(version);
 				load();
+				toast("Memory change reverted", {
+					description: "The restore is recorded as a new version.",
+				});
 			} catch (cause) {
 				setError(cause instanceof Error ? cause.message : "Rollback failed.");
 			} finally {
@@ -157,7 +165,14 @@ export function MemoryPanel() {
 				) : (
 					<ul className="flex flex-col gap-2">
 						{heartbeats.map((run) => (
-							<HeartbeatRow key={`${run.name}-${run.started_at}`} run={run} />
+							<HeartbeatRow
+								key={`${run.name}-${run.started_at}`}
+								run={run}
+								justArrived={
+									seenLatestRun.current !== null &&
+									run.started_at > seenLatestRun.current
+								}
+							/>
 						))}
 					</ul>
 				)}
