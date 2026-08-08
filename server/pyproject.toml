@@ -1,0 +1,55 @@
+[project]
+name = "saaya"
+version = "0.1.0"
+description = "Saaya: a persistent AI coworker. Server: agent, memory, reflection, heartbeats, MCP, API."
+readme = "README.md"
+authors = [
+    { name = "Saleha Iftikhar", email = "salehaiftikharrrr@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.19.0",
+    "asyncpg>=0.31.0",
+    "deepagents>=0.7.5",
+    "fastapi>=0.141.1",
+    "langchain>=1.3.14",
+    "langchain-anthropic>=1.5.4",
+    "langchain-openai>=1.4.2",
+    "langgraph>=1.2.10",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy>=2.0.51",
+    "uvicorn[standard]>=0.52.1",
+]
+
+[project.scripts]
+saaya = "saaya:main"
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.411",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.2",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

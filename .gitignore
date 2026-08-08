@@ -1,0 +1,24 @@
+# Secrets: never committed
+.env.local
+.env*.local
+
+# Saaya runtime workspace contents
+workspace/*
+!workspace/.gitkeep
+
+# Python
+server/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+web/.next/
+web/storybook-static/
+web/playwright-report/
+web/test-results/
+
+# OS/editor
+.DS_Store
