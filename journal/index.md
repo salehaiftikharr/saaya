@@ -24,6 +24,7 @@ factual, linked, and never created to inflate documentation.
 - [P-001: Phase 1 foundation, first increment](progress/P-001-phase-1-foundation.md)
 - [P-002: Phase 2 vertical slice](progress/P-002-vertical-slice.md)
 - [P-003: Semantic memory, procedural memory, and reflection](progress/P-003-memory-and-reflection.md)
+- [P-004: Memory panel in the web app](progress/P-004-memory-ui.md)
 
 ## Decisions
 
