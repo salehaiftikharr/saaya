@@ -5,7 +5,7 @@ import { Beat } from "@/components/about/beat";
 import { DeviceFrame } from "@/components/about/device-frame";
 import { MemoryDiff } from "@/components/about/memory-diff";
 import { SiteHeader } from "@/components/about/site-header";
-import { EchoMark } from "@/components/brand/echo-mark";
+import { EchoMark, type EchoState } from "@/components/brand/echo-mark";
 import { ContinuityStrip } from "@/components/chat/continuity-strip";
 import { EchoTrail } from "@/components/chat/echo-trail";
 import { Message } from "@/components/chat/message";
@@ -15,6 +15,7 @@ import { VersionRow } from "@/components/memory/version-row";
 import { ToolRow } from "@/components/tools/tool-row";
 import { Button } from "@/components/ui/button";
 import {
+	demoArchitecture,
 	demoChannelContinuity,
 	demoContinuity,
 	demoConversation,
@@ -23,7 +24,9 @@ import {
 	demoQuietSummary,
 	demoSemanticItems,
 	demoTool,
+	demoToolLifecycle,
 	demoToolTurn,
+	demoTrustMatrix,
 	demoVersions,
 } from "@/lib/demo-fixtures";
 
@@ -91,16 +94,43 @@ export default function About() {
 				<Beat
 					eyebrow="02 - Work"
 					id="work"
-					title="Give it work and watch"
-					copy="Tool activity is visible while it happens, never narrated after the fact. The trail means Saaya is still working."
-					variant="split-reverse"
+					title="Watch a real task, including the bad part"
+					copy="Tool activity is visible while it happens, and failure is reported honestly with a recovery, never hidden behind a green check."
 				>
-					<DeviceFrame address="saaya.local/chat">
-						<div className="flex flex-col gap-4">
-							<Message message={demoToolTurn} />
-							<EchoTrail />
-						</div>
-					</DeviceFrame>
+					<ol className="relative flex flex-col gap-5 border-primary/30 border-l-2 pl-6">
+						{demoToolLifecycle.map((step, index) => {
+							const markState: EchoState =
+								step.state === "running"
+									? "tool"
+									: step.state === "failed"
+										? "failure"
+										: step.state === "recovered"
+											? "success"
+											: "listening";
+							return (
+								<li key={step.state} className="flex flex-col gap-1.5">
+									<div className="flex items-center gap-2.5">
+										<EchoMark
+											state={markState}
+											className="-ml-[38px] size-5 bg-background text-foreground"
+										/>
+										<span className="type-eyebrow">
+											{index + 1} - {step.label}
+										</span>
+									</div>
+									<p className="max-w-xl text-muted-foreground text-sm leading-relaxed">
+										{step.copy}
+									</p>
+									{step.state === "running" && <EchoTrail />}
+									{step.state === "recovered" && (
+										<div className="max-w-xl">
+											<Message message={demoToolTurn} />
+										</div>
+									)}
+								</li>
+							);
+						})}
+					</ol>
 				</Beat>
 
 				<Beat
@@ -219,6 +249,85 @@ export default function About() {
 							onActivate={noop}
 							onDisable={noop}
 						/>
+					</ul>
+				</Beat>
+
+				<Beat
+					eyebrow="09 - Trust"
+					id="trust"
+					title="Boundaries you can read"
+					copy="What Saaya can touch is a short list, and every row of it is a real control in the product, not a policy paragraph."
+					variant="band"
+				>
+					<div className="overflow-x-auto">
+						<table className="w-full min-w-[36rem] border-separate border-spacing-0 text-left text-sm">
+							<thead>
+								<tr>
+									{[
+										"Surface",
+										"Saaya reads",
+										"Saaya writes",
+										"Your control",
+									].map((heading) => (
+										<th
+											key={heading}
+											scope="col"
+											className="type-eyebrow border-border border-b pr-4 pb-2 font-medium"
+										>
+											{heading}
+										</th>
+									))}
+								</tr>
+							</thead>
+							<tbody>
+								{demoTrustMatrix.map((row) => (
+									<tr key={row.surface}>
+										<th
+											scope="row"
+											className="border-border/60 border-b py-2.5 pr-4 text-left align-top font-medium"
+										>
+											{row.surface}
+										</th>
+										<td className="border-border/60 border-b py-2.5 pr-4 align-top text-muted-foreground">
+											{row.reads}
+										</td>
+										<td className="border-border/60 border-b py-2.5 pr-4 align-top text-muted-foreground">
+											{row.writes}
+										</td>
+										<td className="border-border/60 border-b py-2.5 align-top">
+											{row.gate}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</Beat>
+
+				<Beat
+					eyebrow="10 - How"
+					id="architecture"
+					title="Why it holds together"
+					copy="Saaya is built on LangChain's Deep Agents harness and LangGraph's durable state. Each piece exists for an outcome you can feel."
+					variant="split"
+				>
+					<ul className="flex flex-col gap-3">
+						{demoArchitecture.map((item) => (
+							<li
+								key={item.outcome}
+								className="rounded-lg border bg-card p-3.5"
+							>
+								<p className="text-sm leading-relaxed">{item.outcome}</p>
+								<details className="mt-1">
+									<summary className="cursor-pointer text-muted-foreground text-xs">
+										How
+									</summary>
+									<p className="mt-1.5 text-muted-foreground text-xs leading-relaxed">
+										{item.detail}
+									</p>
+								</details>
+							</li>
+						))}
 					</ul>
 				</Beat>
 

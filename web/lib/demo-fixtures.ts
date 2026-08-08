@@ -194,3 +194,93 @@ export const demoThreads = [
 		last_activity_at: new Date(Date.now() - 9 * 86_400_000).toISOString(),
 	},
 ] as const;
+
+export const demoToolLifecycle = [
+	{
+		state: "requested",
+		label: "Requested",
+		copy: "Noor asks Saaya to check the Atlas 2.1 release-note draft before the tag.",
+	},
+	{
+		state: "running",
+		label: "Running",
+		copy: "release_note_check runs in a scrubbed sandbox; the trail shows work in progress.",
+	},
+	{
+		state: "failed",
+		label: "Failed, honestly",
+		copy: 'The draft is missing its "Upgrade notes" section. Saaya reports the failure and what it means instead of hiding it.',
+	},
+	{
+		state: "recovered",
+		label: "Recovered",
+		copy: "Saaya drafts the missing section from the changelog, reruns the check, and the draft passes.",
+	},
+] as const;
+
+export const demoTrustMatrix = [
+	{
+		surface: "Conversations",
+		reads: "Your messages in that thread",
+		writes: "Replies and visible tool activity",
+		gate: "Nothing crosses threads without memory",
+	},
+	{
+		surface: "Semantic memory",
+		reads: "Recalled facts relevant to the moment",
+		writes: "New facts with provenance",
+		gate: "Correct, forget, or supersede any item",
+	},
+	{
+		surface: "Working knowledge",
+		reads: "Loaded into every conversation",
+		writes: "Only through validated reflection",
+		gate: "Versioned; any change reversible",
+	},
+	{
+		surface: "Identity file",
+		reads: "Always",
+		writes: "Never",
+		gate: "Protected; validation proves it unchanged",
+	},
+	{
+		surface: "Dynamic tools",
+		reads: "Approved scripts only",
+		writes: "Proposals await your review",
+		gate: "Nothing runs before approval",
+	},
+	{
+		surface: "Slack and MCP",
+		reads: "Messages sent to Saaya",
+		writes: "Replies in the same thread",
+		gate: "Same memory, separate thread identities",
+	},
+] as const;
+
+export const demoArchitecture = [
+	{
+		outcome: "Return next week without re-explaining the work.",
+		detail:
+			"Conversations are durable LangGraph state in your own Postgres; a restart or a new device changes nothing.",
+	},
+	{
+		outcome: "See exactly where a remembered fact came from.",
+		detail:
+			"Semantic memory rows carry provenance: source conversation, when, why retained, and how often the memory mattered since.",
+	},
+	{
+		outcome: "Reverse what Saaya learned without erasing history.",
+		detail:
+			"Working knowledge changes only through reflection that deterministic rules validate; every version is kept and restorable. No model judges another model.",
+	},
+	{
+		outcome: "Use the same coworker from your browser, Slack, or editor.",
+		detail:
+			"Web, Slack, and MCP run the same Deep Agents harness over the same memory, with thread identities kept separate per surface.",
+	},
+	{
+		outcome: "Nothing Saaya proposes runs until you approve it.",
+		detail:
+			"Reusable tools are drafts with reviewable code; approval materializes the script, and disable or rollback is one action.",
+	},
+] as const;

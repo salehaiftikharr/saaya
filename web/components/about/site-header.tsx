@@ -20,6 +20,7 @@ const ANCHORS = [
 	{ href: "#channels", label: "Channels" },
 	{ href: "#tools", label: "Tools" },
 	{ href: "#control", label: "Control" },
+	{ href: "#trust", label: "Trust" },
 ];
 
 /* The product's front door: quiet at the top, elevated once the story
