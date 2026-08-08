@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     slack_bot_token: str = ""
     slack_app_token: str = ""
 
+    workspace_dir: Path = REPO_ROOT / "workspace"
+
     chat_model: str = "anthropic:claude-sonnet-4-6"
     embedding_model: str = "openai:text-embedding-3-small"
 

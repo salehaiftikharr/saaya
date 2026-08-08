@@ -10,6 +10,7 @@ from psycopg import AsyncConnection
 from psycopg.rows import DictRow, dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from saaya.api.memory_routes import memory_router
 from saaya.api.routes import router
 from saaya.config import Settings, load_settings
 from saaya.db.engine import create_engine
@@ -48,13 +49,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             memory_store = SemanticMemoryStore(engine, build_embedder(resolved))
             # Imported here so hermetic API tests never import model providers.
             from saaya.agent.assembly import build_agent
+            from saaya.reflection.proposer import build_proposer
+            from saaya.reflection.runner import ReflectionRunner
 
-            app.state.agent = build_agent(resolved, saver, memory_store)
+            def rebuild_agent() -> None:
+                # Procedural memory rides the compiled system prompt, so an
+                # applied reflection or rollback rebuilds the graph.
+                app.state.agent = build_agent(resolved, saver, memory_store)
+
+            rebuild_agent()
             app.state.settings = resolved
+            app.state.memory_store = memory_store
+            app.state.reflection_runner = ReflectionRunner(
+                resolved.workspace_dir / "memory", build_proposer(resolved)
+            )
+            app.state.rebuild_agent = rebuild_agent
             yield
         finally:
             await pool.close()
 
     app = FastAPI(title="saaya", lifespan=lifespan)
     app.include_router(router)
+    app.include_router(memory_router)
     return app

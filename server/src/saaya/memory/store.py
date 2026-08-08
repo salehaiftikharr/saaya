@@ -81,6 +81,32 @@ class SemanticMemoryStore:
         async with self._engine.connect() as connection:
             return await connection.run_sync(_insert)
 
+    async def list_recent(self, *, limit: int = 50) -> list[RememberedItem]:
+        statement = (
+            select(MemoryItem)
+            .where(MemoryItem.superseded_by.is_(None))
+            .order_by(MemoryItem.learned_at.desc())
+            .limit(limit)
+        )
+
+        def _list(sync_conn: Connection) -> list[RememberedItem]:
+            with Session(bind=sync_conn, expire_on_commit=False) as session:
+                items = session.execute(statement).scalars().all()
+                return [
+                    RememberedItem(
+                        id=str(item.id),
+                        kind=item.kind,
+                        text=item.text,
+                        confidence=item.confidence,
+                        reinforcement_count=item.reinforcement_count,
+                        learned_at=item.learned_at.isoformat(),
+                    )
+                    for item in items
+                ]
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_list)
+
     async def recall(self, query: str, *, limit: int = 5) -> list[RecalledItem]:
         """Nearest live memories; recalling reinforces what was recalled."""
         vector = await self._embed(query)

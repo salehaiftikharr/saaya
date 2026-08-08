@@ -17,8 +17,16 @@ from saaya.memory.tools import make_memory_tools
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 
-def load_system_prompt() -> str:
-    return (PROMPTS_DIR / "identity.md").read_text(encoding="utf-8")
+def load_system_prompt(settings: Settings) -> str:
+    """Identity, then procedural memory: the constitution and the learned
+    working file both ride in the system prompt."""
+    sections = [(PROMPTS_DIR / "identity.md").read_text(encoding="utf-8")]
+    memory_dir = settings.workspace_dir / "memory"
+    for name in ("identity.md", "how-i-work.md"):
+        path = memory_dir / name
+        if path.exists():
+            sections.append(path.read_text(encoding="utf-8"))
+    return "\n\n".join(sections)
 
 
 def build_agent(
@@ -36,6 +44,6 @@ def build_agent(
     return create_deep_agent(  # pyright: ignore[reportUnknownVariableType]
         model=model,
         tools=[current_datetime, *make_memory_tools(memory_store)],
-        system_prompt=load_system_prompt(),
+        system_prompt=load_system_prompt(settings),
         checkpointer=checkpointer,
     )
