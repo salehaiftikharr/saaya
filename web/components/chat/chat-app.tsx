@@ -1,10 +1,11 @@
 "use client";
 
-import { Brain, MessageSquarePlus } from "lucide-react";
+import { Brain, MessageSquarePlus, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaayaMark } from "@/components/brand/saaya-mark";
 import { MemoryPanel } from "@/components/memory/memory-panel";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { ToolsPanel } from "@/components/tools/tools-panel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -14,7 +15,7 @@ import { useChat } from "./use-chat";
 
 export function ChatApp() {
 	const { messages, status, loadError, send, newConversation } = useChat();
-	const [view, setView] = useState<"chat" | "memory">("chat");
+	const [view, setView] = useState<"chat" | "memory" | "tools">("chat");
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll reacts to transcript growth, not to the sentinel's identity
@@ -54,6 +55,15 @@ export function ChatApp() {
 						<Brain className="size-4" />
 						Memory
 					</Button>
+					<Button
+						variant={view === "tools" ? "secondary" : "ghost"}
+						className="justify-start gap-2"
+						aria-pressed={view === "tools"}
+						onClick={() => setView(view === "tools" ? "chat" : "tools")}
+					>
+						<Wrench className="size-4" />
+						Tools
+					</Button>
 				</div>
 				<p className="mt-auto px-4 pb-4 text-muted-foreground text-xs">
 					Conversations survive restarts. Close this tab and come back; Saaya
@@ -63,13 +73,23 @@ export function ChatApp() {
 			<main className="flex h-dvh flex-1 flex-col">
 				<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
 					<span className="text-muted-foreground text-sm" aria-live="polite">
-						{view === "memory" ? "Memory" : working ? "Working" : "Ready"}
+						{view === "memory"
+							? "Memory"
+							: view === "tools"
+								? "Tools"
+								: working
+									? "Working"
+									: "Ready"}
 					</span>
 					<ThemeToggle />
 				</header>
 				{view === "memory" ? (
 					<div className="flex-1 overflow-y-auto">
 						<MemoryPanel />
+					</div>
+				) : view === "tools" ? (
+					<div className="flex-1 overflow-y-auto">
+						<ToolsPanel />
 					</div>
 				) : (
 					<>

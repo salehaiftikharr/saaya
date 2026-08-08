@@ -29,6 +29,7 @@ factual, linked, and never created to inflate documentation.
 - [P-006: MCP server and external MCP consumption](progress/P-006-mcp.md)
 - [P-007: Slack channel over Socket Mode](progress/P-007-slack.md)
 - [P-008: Containerized full stack](progress/P-008-deployment.md)
+- [P-009: Dynamic reusable capabilities](progress/P-009-dynamic-tools.md)
 
 ## Decisions
 

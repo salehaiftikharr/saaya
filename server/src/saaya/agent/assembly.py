@@ -14,6 +14,8 @@ from saaya.agent.tools import current_datetime
 from saaya.config import Settings
 from saaya.memory.store import SemanticMemoryStore
 from saaya.memory.tools import make_memory_tools
+from saaya.tools.agent_tools import build_dynamic_tools, make_propose_tool
+from saaya.tools.registry import ToolInfo, ToolRegistry
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -35,6 +37,8 @@ def build_agent(
     checkpointer: BaseCheckpointSaver[Any],
     memory_store: SemanticMemoryStore,
     external_tools: Sequence[Any] = (),
+    tool_registry: ToolRegistry | None = None,
+    active_dynamic: Sequence[ToolInfo] = (),
 ) -> Any:
     """Compile the Saaya graph with durable checkpointing."""
     provider, _, model_name = settings.chat_model.partition(":")
@@ -45,7 +49,19 @@ def build_agent(
     )
     return create_deep_agent(  # pyright: ignore[reportUnknownVariableType]
         model=model,
-        tools=[current_datetime, *make_memory_tools(memory_store), *external_tools],
+        tools=[
+            current_datetime,
+            *make_memory_tools(memory_store),
+            *external_tools,
+            *(
+                [
+                    make_propose_tool(tool_registry),
+                    *build_dynamic_tools(list(active_dynamic), tool_registry),
+                ]
+                if tool_registry is not None
+                else []
+            ),
+        ],
         system_prompt=load_system_prompt(settings),
         checkpointer=checkpointer,
     )

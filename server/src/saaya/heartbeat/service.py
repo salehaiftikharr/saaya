@@ -22,7 +22,7 @@ def build_reflect_heartbeat(
             transcript, f"heartbeat reflection over thread {thread_id}"
         )
         if result.outcome == "applied":
-            app.state.rebuild_agent()
+            await app.state.rebuild_agent()
         if result.violations:
             rules = ",".join(v.rule for v in result.violations)
             return f"{result.outcome} ({rules})"

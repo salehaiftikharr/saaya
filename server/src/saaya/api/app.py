@@ -12,6 +12,7 @@ from psycopg_pool import AsyncConnectionPool
 
 from saaya.api.memory_routes import memory_router
 from saaya.api.routes import router
+from saaya.api.tools_routes import tools_router
 from saaya.config import Settings, load_settings
 from saaya.db.engine import create_engine
 from saaya.heartbeat.activity import ThreadActivity
@@ -57,13 +58,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             from saaya.reflection.runner import ReflectionRunner
 
             external_tools = await load_external_tools(resolved.workspace_dir / "mcp-servers.json")
+            from saaya.tools.registry import ToolRegistry
 
-            def rebuild_agent() -> None:
-                # Procedural memory rides the compiled system prompt, so an
-                # applied reflection or rollback rebuilds the graph.
-                app.state.agent = build_agent(resolved, saver, memory_store, external_tools)
+            tool_registry = ToolRegistry(engine, resolved.workspace_dir / "tools")
 
-            rebuild_agent()
+            async def rebuild_agent() -> None:
+                # Procedural memory rides the compiled system prompt and the
+                # active tool set is part of the graph, so reflection applies,
+                # rollbacks, and tool lifecycle changes all rebuild it.
+                active = await tool_registry.active_tools()
+                app.state.agent = build_agent(
+                    resolved, saver, memory_store, external_tools, tool_registry, active
+                )
+
+            await rebuild_agent()
+            app.state.tool_registry = tool_registry
             app.state.settings = resolved
             app.state.memory_store = memory_store
             app.state.reflection_runner = ReflectionRunner(
@@ -122,6 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="saaya", lifespan=lifespan)
     app.include_router(router)
     app.include_router(memory_router)
+    app.include_router(tools_router)
     if mcp_app is not None:
         app.mount("/mcp", mcp_app)
     return app

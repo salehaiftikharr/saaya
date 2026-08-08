@@ -27,7 +27,7 @@ acceptance criteria and verification gates pass.
 - [x] 8. One useful heartbeat (P-005)
 - [x] 9. MCP server and external MCP consumption (P-006)
 - [x] 10. Slack channel (P-007; owner DM round-trip pending, see entry)
-- [ ] 11. Dynamic or reusable tool creation
+- [x] 11. Dynamic or reusable tool creation (P-009)
 - [~] 12. Deployment and operational hardening (P-008: full compose stack verified; production posture notes remain)
 
 Standing quality debts being tracked: committed Playwright e2e spec (live

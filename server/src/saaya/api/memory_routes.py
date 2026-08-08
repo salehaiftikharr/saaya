@@ -80,7 +80,7 @@ async def run_reflection(request: Request, body: ReflectRequest) -> ReflectRespo
         transcript, f"reflection over thread {body.thread_id}"
     )
     if result.outcome == "applied":
-        state.rebuild_agent()
+        await state.rebuild_agent()
     return ReflectResponse(
         outcome=result.outcome,
         version=result.version,
@@ -92,7 +92,7 @@ async def run_reflection(request: Request, body: ReflectRequest) -> ReflectRespo
 async def rollback(request: Request, body: RollbackRequest) -> ReflectResponse:
     state = request.app.state
     entry = state.reflection_runner.ledger.rollback_to(body.version)
-    state.rebuild_agent()
+    await state.rebuild_agent()
     return ReflectResponse(outcome="rolled-back", version=entry.version, violations=[])
 
 
