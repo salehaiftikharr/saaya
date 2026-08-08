@@ -2,9 +2,9 @@
 id: P-001
 title: Phase 1 foundation, first increment
 type: progress
-status: in-progress
+status: complete
 created: 2026-08-07
-updated: 2026-08-07
+updated: 2026-08-08
 tags:
   - phase-1
   - scaffolding
@@ -68,3 +68,29 @@ created; brand system and app shell pending.
 
 Brand system v1 (BRAND.md, tokens, provisional mark), minimal app shell,
 GitHub Actions running exactly the local gates, first commit series.
+
+## Second increment (completing Phase 1)
+
+- Brand system v1 (provisional, documented): BRAND.md, Dusk tokens, mark
+  (body + echo), wordmark, adaptive favicon; light and dark designed together;
+  WCAG AA contrast recorded. Social PNG still pending.
+- App shell: sidebar + empty state on shadcn components (button, separator,
+  tooltip, skeleton installed via CLI), next-themes with toggle, SaayaMark
+  React component; colocated stories for SaayaMark and ThemeToggle.
+- Fixed a real generator bug: globals.css mapped --font-sans to itself, so
+  the app rendered in the serif fallback; now maps to --font-geist-sans.
+- Biome a11y rule caught the empty favicon title; titles added to SVGs.
+- CI workflow added running exactly the local gates (server and web jobs).
+
+## Verification (second increment)
+
+All gates green: ruff format/check, pyright strict, pytest 3/3, biome, tsc,
+vitest 4/4 including the axe a11y gate on both stories, next build. Shell
+verified in a real browser via Playwright MCP in light and dark themes
+(screenshots reviewed; fonts, palette, mark, and toggle all correct).
+
+## Next step (updated)
+
+Phase 2 vertical slice: FastAPI app serving the deep agent with SSE
+streaming, checkpointed threads in Postgres, one visible tool, restart
+survival, end-to-end test through the real UI.

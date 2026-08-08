@@ -1,0 +1,24 @@
+/* Saaya design tokens. Source of truth for the product palette.
+   Light and dark are designed together; web/app/globals.css mirrors these
+   values into the shadcn theme variables and says so in a comment.
+   One accent: dusk. It never competes with a second brand color. */
+
+:root {
+	--saaya-background: #faf9f7;
+	--saaya-surface: #ffffff;
+	--saaya-ink: #1b1d22;
+	--saaya-muted: #6b6e76;
+	--saaya-line: #e7e5e0;
+	--saaya-accent: #5a50bf;
+	--saaya-accent-soft: #edebf8;
+}
+
+.dark {
+	--saaya-background: #101114;
+	--saaya-surface: #17181c;
+	--saaya-ink: #e9e8e4;
+	--saaya-muted: #9a9ca3;
+	--saaya-line: #26282e;
+	--saaya-accent: #948aea;
+	--saaya-accent-soft: #1f2030;
+}
