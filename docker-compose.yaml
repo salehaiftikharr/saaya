@@ -9,6 +9,7 @@ services:
     environment:
       DATABASE_URL: postgresql://saaya:saaya@postgres:5432/saaya
       WORKSPACE_DIR: /app/workspace
+      JOBS_WORKSPACE_DIR: /app/workspace/jobs
     volumes:
       - ./workspace:/app/workspace
     ports:

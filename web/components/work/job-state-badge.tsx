@@ -4,17 +4,17 @@ import { type JobState, STATE_LABEL } from "@/lib/jobs-api";
 import { cn } from "@/lib/utils";
 
 const TONE: Record<JobState, string> = {
-	draft: "bg-muted text-muted-foreground",
-	queued: "bg-muted text-muted-foreground",
+	draft: "bg-secondary text-secondary-foreground",
+	queued: "bg-secondary text-secondary-foreground",
 	planning: "bg-accent text-accent-foreground",
 	waiting_approval:
 		"bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
 	running: "bg-accent text-accent-foreground",
-	paused: "bg-muted text-muted-foreground",
+	paused: "bg-secondary text-secondary-foreground",
 	blocked: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200",
 	retrying: "bg-accent text-accent-foreground",
 	failed: "bg-destructive/10 text-destructive",
-	cancelled: "bg-muted text-muted-foreground",
+	cancelled: "bg-secondary text-secondary-foreground",
 	completed: "bg-primary/10 text-primary",
 };
 
