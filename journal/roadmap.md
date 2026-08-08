@@ -30,6 +30,10 @@ acceptance criteria and verification gates pass.
 - [x] 11. Dynamic or reusable tool creation (P-009)
 - [x] 12. Deployment and operational hardening (P-008, P-010)
 
+Design elevation program (docs/design/phantom-study-and-plan.md): 1 type
+foundation, 2 continuity surface, 3 outcome-first rows, 4 purposeful
+motion, 5 narrative page with real components, 6 full-matrix verification.
+
 Standing quality debts being tracked: committed Playwright e2e spec (live
 ring), markdown rendering in chat, thread list UI, restore confirmation step,
 brand social PNG.

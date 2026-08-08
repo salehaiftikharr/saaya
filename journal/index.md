@@ -37,6 +37,10 @@ factual, linked, and never created to inflate documentation.
 - [ADR-001: Deep Agents as the primary harness](decisions/ADR-001-deep-agents-harness.md)
 - [ADR-002: Serve the graph from our own FastAPI app](decisions/ADR-002-own-fastapi-server.md)
 
+## Design
+
+- [Phantom study and design plan](../docs/design/phantom-study-and-plan.md)
+
 ## Roadmap
 
 - [Roadmap checklist](roadmap.md)
