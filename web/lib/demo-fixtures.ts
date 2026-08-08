@@ -167,3 +167,30 @@ export const demoChannelContinuity = [
 		reply: '"Nothing. Notes shipped after Maya\'s review; push the tag."',
 	},
 ] as const;
+
+export const demoThreads = [
+	{
+		id: "demo-t1",
+		title: "Draft the Atlas 2.1 release notes",
+		source: "web",
+		last_activity_at: new Date(Date.now() - 8 * 60_000).toISOString(),
+	},
+	{
+		id: "demo-t2",
+		title: "Standup summary for Maya",
+		source: "slack-dm",
+		last_activity_at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+	},
+	{
+		id: "demo-t3",
+		title: "What is left before the tag",
+		source: "mcp",
+		last_activity_at: new Date(Date.now() - 26 * 3_600_000).toISOString(),
+	},
+	{
+		id: "demo-t4",
+		title: "Changelog format questions and a very long title that keeps going",
+		source: "slack-thread",
+		last_activity_at: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+	},
+] as const;

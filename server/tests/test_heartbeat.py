@@ -86,15 +86,35 @@ async def test_new_activity_makes_a_thread_worthy_again(
     assert reflected == [thread_id, thread_id]
 
 
-async def test_recent_web_threads_excludes_channel_namespaces(
+async def test_recent_threads_lists_surfaces_and_titles_once(
     engine: AsyncEngine, clock: FakeClock
 ) -> None:
     activity = ThreadActivity(engine, clock=clock)
     web_id = uuid.uuid4().hex
-    await activity.mark_active(web_id)
-    await activity.mark_active("slack:D42")
-    await activity.mark_active(f"mcp-{uuid.uuid4()}")
-    rows = await activity.recent_web_threads(limit=10)
-    ids = [thread_id for thread_id, _ in rows]
-    assert web_id in ids
-    assert all(":" not in i and not i.startswith("mcp-") for i in ids)
+    await activity.mark_active(web_id, first_text="please draft the release notes")
+    await activity.mark_active(web_id, first_text="a later message must not retitle")
+    await activity.mark_active("slack:D42", first_text="standup summary")
+    await activity.mark_active("sched:job-1")
+    rows = await activity.recent_threads(limit=10)
+    by_id = {row.id: row for row in rows}
+    assert by_id[web_id].title == "Draft the release notes"
+    assert by_id["slack:D42"].title == "Standup summary"
+    assert "sched:job-1" not in by_id
+
+
+async def test_archive_hides_a_thread_from_the_list(engine: AsyncEngine, clock: FakeClock) -> None:
+    activity = ThreadActivity(engine, clock=clock)
+    thread_id = uuid.uuid4().hex
+    await activity.mark_active(thread_id, first_text="temporary work")
+    assert await activity.archive(thread_id) is True
+    rows = await activity.recent_threads(limit=50)
+    assert thread_id not in [row.id for row in rows]
+
+
+async def test_rename_persists(engine: AsyncEngine, clock: FakeClock) -> None:
+    activity = ThreadActivity(engine, clock=clock)
+    thread_id = uuid.uuid4().hex
+    await activity.mark_active(thread_id, first_text="original words")
+    assert await activity.set_title(thread_id, "Chosen name") is True
+    rows = await activity.recent_threads(limit=50)
+    assert {row.id: row.title for row in rows}[thread_id] == "Chosen name"

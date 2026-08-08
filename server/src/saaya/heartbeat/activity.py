@@ -23,11 +23,16 @@ class ThreadActivity:
         self._engine = engine
         self._clock = clock
 
-    async def mark_active(self, thread_id: str) -> None:
+    async def mark_active(self, thread_id: str, first_text: str | None = None) -> None:
+        """Upsert liveness; the title is written once, at creation, from the
+        first user-authored text, and never overwritten here."""
+        from saaya.api.titles import derive_title
+
         now = self._clock()
+        title = derive_title(first_text) if first_text else None
         statement = (
             insert(Thread)
-            .values(id=thread_id, last_activity_at=now)
+            .values(id=thread_id, last_activity_at=now, title=title)
             .on_conflict_do_update(index_elements=[Thread.id], set_={"last_activity_at": now})
         )
 
@@ -80,21 +85,49 @@ class ThreadActivity:
         async with self._engine.connect() as connection:
             await connection.run_sync(_update)
 
-    async def recent_web_threads(self, *, limit: int) -> list[tuple[str, datetime]]:
-        """Bare-uuid ids are the web surface; every other namespace carries a
-        prefix (slack:, mcp-, sched:)."""
+    async def recent_threads(self, *, limit: int) -> list[Thread]:
+        """Every conversational surface, newest first; scheduler and test
+        namespaces stay out, as do archived conversations."""
 
-        def _query(sync_conn: Connection) -> list[tuple[str, datetime]]:
-            with Session(bind=sync_conn) as session:
+        def _query(sync_conn: Connection) -> list[Thread]:
+            with Session(bind=sync_conn, expire_on_commit=False) as session:
                 rows = session.execute(
-                    select(Thread).order_by(Thread.last_activity_at.desc())
+                    select(Thread)
+                    .where(Thread.archived_at.is_(None))
+                    .order_by(Thread.last_activity_at.desc())
                 ).scalars()
-                web = [
-                    (row.id, row.last_activity_at)
-                    for row in rows
-                    if ":" not in row.id and not row.id.startswith(("mcp-", "test-"))
+                keep = [
+                    row for row in rows if not row.id.startswith(("sched:", "test-", "first-hour:"))
                 ]
-                return web[:limit]
+                return keep[:limit]
 
         async with self._engine.connect() as connection:
             return await connection.run_sync(_query)
+
+    async def set_title(self, thread_id: str, title: str) -> bool:
+        def _update(sync_conn: Connection) -> bool:
+            with Session(bind=sync_conn) as session:
+                thread = session.get(Thread, thread_id)
+                if thread is None:
+                    return False
+                thread.title = title
+                session.commit()
+                return True
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_update)
+
+    async def archive(self, thread_id: str) -> bool:
+        now = self._clock()
+
+        def _update(sync_conn: Connection) -> bool:
+            with Session(bind=sync_conn) as session:
+                thread = session.get(Thread, thread_id)
+                if thread is None:
+                    return False
+                thread.archived_at = now
+                session.commit()
+                return True
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_update)

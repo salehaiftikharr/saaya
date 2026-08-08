@@ -26,6 +26,7 @@ def build_mcp_app(
     public_url: str,
     memory_store: SemanticMemoryStore,
     get_agent: Callable[[], Any],
+    activity_mark: Callable[[str, str | None], Any],
 ) -> Starlette:
     server = FastMCP(
         name="saaya",
@@ -75,6 +76,7 @@ def build_mcp_app(
     async def ask_saaya(text: str, thread_id: str | None = None) -> dict[str, str]:
         agent = get_agent()
         thread = thread_id or f"mcp-{uuid.uuid4()}"
+        await activity_mark(thread, text if thread_id is None else None)
         result = await agent.ainvoke(
             {"messages": [{"role": "user", "content": text}]},
             config={"configurable": {"thread_id": thread}},

@@ -74,7 +74,7 @@ class SlackChannel:
 
     async def _run_turn(self, event: dict[str, Any], text: str, say: Any) -> None:
         thread_id = thread_id_for(event)
-        await self._activity.mark_active(thread_id)
+        await self._activity.mark_active(thread_id, first_text=text)
         reply_thread = event.get("thread_ts") or (
             event.get("ts") if event.get("channel_type") != "im" else None
         )

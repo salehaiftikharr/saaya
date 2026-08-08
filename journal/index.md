@@ -44,6 +44,7 @@ factual, linked, and never created to inflate documentation.
 - [P-021: Connection status, the live e2e ring, and the social asset](progress/P-021-status-e2e-social.md)
 - [P-022: Final verification matrix and honest gate exits](progress/P-022-matrix-and-gates.md)
 - [P-023: Handoff, the session in full](progress/P-023-handoff.md)
+- [P-024: Conversation identity, history, and the live header](progress/P-024-conversation-identity.md)
 
 ## Decisions
 
@@ -53,6 +54,7 @@ factual, linked, and never created to inflate documentation.
 ## Design
 
 - [Phantom study and design plan](../docs/design/phantom-study-and-plan.md)
+- [Application refinement audit](../docs/design/app-refinement-audit.md)
 
 ## Roadmap
 

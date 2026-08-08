@@ -36,6 +36,9 @@ async def engine() -> AsyncIterator[AsyncEngine]:
     test_engine = create_engine(f"{base_url}/{TEST_DATABASE}")
     async with test_engine.begin() as connection:
         await connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        # Recreate rather than create: model columns added since the last run
+        # must reach the test schema, and this database holds nothing durable.
+        await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
     yield test_engine
     async with test_engine.begin() as connection:

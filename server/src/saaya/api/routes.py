@@ -4,7 +4,7 @@ import json
 import uuid
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -48,7 +48,9 @@ async def chat(request: Request, body: ChatRequest) -> StreamingResponse:
     thread_id = body.thread_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": thread_id}}
     payload = {"messages": [{"role": "user", "content": body.text}]}
-    await request.app.state.thread_activity.mark_active(thread_id)
+    await request.app.state.thread_activity.mark_active(
+        thread_id, first_text=None if body.thread_id else body.text
+    )
 
     async def stream() -> AsyncIterator[str]:
         yield _sse(ThreadStarted(thread_id=thread_id))
@@ -95,12 +97,73 @@ async def thread_context(request: Request, thread_id: str) -> list[ContextItem]:
 
 class ThreadInfo(BaseModel):
     id: str
+    title: str
+    source: str
     last_activity_at: str
 
 
+class RenameBody(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
+
+
+def thread_source(thread_id: str) -> str:
+    if thread_id.startswith("mcp-"):
+        return "mcp"
+    if thread_id.startswith("slack:"):
+        return "slack-thread" if thread_id.count(":") >= 2 else "slack-dm"
+    return "web"
+
+
 @router.get("/api/threads")
-async def list_threads(request: Request, limit: int = 20) -> list[ThreadInfo]:
-    """Web conversations, newest activity first. Channel-owned threads
-    (slack:, mcp-, sched:) stay in their own surfaces."""
-    rows = await request.app.state.thread_activity.recent_web_threads(limit=limit)
-    return [ThreadInfo(id=thread_id, last_activity_at=at.isoformat()) for thread_id, at in rows]
+async def list_threads(request: Request, limit: int = 50) -> list[ThreadInfo]:
+    """Every conversational surface, newest first. Titles missing from rows
+    created before titling exist are backfilled once, from the first
+    user-authored message in the checkpointed transcript, then persisted."""
+    from saaya.api.titles import FALLBACK_TITLE, derive_title, first_user_text
+
+    activity = request.app.state.thread_activity
+    rows = await activity.recent_threads(limit=limit)
+    result: list[ThreadInfo] = []
+    for row in rows:
+        title = row.title
+        if title is None:
+            state = await request.app.state.agent.aget_state(
+                {"configurable": {"thread_id": row.id}}
+            )
+            text = first_user_text(to_transcript(state.values.get("messages", [])))
+            title = derive_title(text) if text else FALLBACK_TITLE
+            await activity.set_title(row.id, title)
+        result.append(
+            ThreadInfo(
+                id=row.id,
+                title=title,
+                source=thread_source(row.id),
+                last_activity_at=row.last_activity_at.isoformat(),
+            )
+        )
+    return result
+
+
+@router.patch("/api/threads/{thread_id}")
+async def rename_thread(request: Request, thread_id: str, body: RenameBody) -> ThreadInfo:
+    activity = request.app.state.thread_activity
+    title = " ".join(body.title.split())
+    if not title:
+        raise HTTPException(status_code=422, detail="title cannot be blank")
+    if not await activity.set_title(thread_id, title):
+        raise HTTPException(status_code=404, detail="unknown thread")
+    return ThreadInfo(
+        id=thread_id,
+        title=title,
+        source=thread_source(thread_id),
+        last_activity_at="",
+    )
+
+
+@router.post("/api/threads/{thread_id}/archive")
+async def archive_thread(request: Request, thread_id: str) -> dict[str, str]:
+    """Archival hides the conversation from the list; the checkpointed
+    transcript and anything Saaya learned from it remain."""
+    if not await request.app.state.thread_activity.archive(thread_id):
+        raise HTTPException(status_code=404, detail="unknown thread")
+    return {"status": "archived"}

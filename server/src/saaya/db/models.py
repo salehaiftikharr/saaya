@@ -48,6 +48,8 @@ class Thread(Base):
     __tablename__ = "threads"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str | None] = mapped_column(String(80), default=None)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     last_reflected_at: Mapped[datetime | None] = mapped_column(

@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, MessageSquare, MessageSquarePlus, Wrench } from "lucide-react";
+import { Brain, History, MessageSquarePlus, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaayaMark } from "@/components/brand/saaya-mark";
 import { MemoryPanel } from "@/components/memory/memory-panel";
@@ -10,10 +10,17 @@ import { ToolsPanel } from "@/components/tools/tools-panel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { relativeTime } from "@/lib/threads-api";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
+import { ThreadList } from "./thread-list";
 import { useChat } from "./use-chat";
 
 export function ChatApp() {
@@ -27,6 +34,8 @@ export function ChatApp() {
 		send,
 		newConversation,
 		switchThread,
+		rename,
+		archive,
 	} = useChat();
 	const [view, setView] = useState<"chat" | "memory" | "tools">("chat");
 	const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -37,6 +46,15 @@ export function ChatApp() {
 	}, [messages]);
 
 	const working = status === "working";
+	const lastMessage = messages[messages.length - 1];
+	const liveState = working
+		? lastMessage?.activities.some((a) => a.state === "running")
+			? "Using a tool"
+			: "Thinking"
+		: "";
+	const activeTitle =
+		threads.find((t) => t.id === activeThread)?.title ??
+		(messages.length > 0 ? "Conversation" : "New conversation");
 
 	return (
 		<div className="flex min-h-dvh w-full">
@@ -78,33 +96,17 @@ export function ChatApp() {
 						Tools
 					</Button>
 				</div>
-				{threads.length > 0 && (
-					<nav
-						aria-label="Conversations"
-						className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pt-2"
-					>
-						<p className="type-eyebrow px-1 pb-1">Conversations</p>
-						{threads.map((thread) => (
-							<Button
-								key={thread.id}
-								variant={thread.id === activeThread ? "secondary" : "ghost"}
-								size="sm"
-								className="justify-start gap-2 font-normal"
-								aria-current={thread.id === activeThread ? "true" : undefined}
-								disabled={working}
-								onClick={() => {
-									setView("chat");
-									switchThread(thread.id);
-								}}
-							>
-								<MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
-								<span className="truncate">
-									{relativeTime(thread.last_activity_at)}
-								</span>
-							</Button>
-						))}
-					</nav>
-				)}
+				<ThreadList
+					threads={threads}
+					activeThread={activeThread}
+					disabled={working}
+					onSelect={(id) => {
+						setView("chat");
+						switchThread(id);
+					}}
+					onRename={rename}
+					onArchive={archive}
+				/>
 				<div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-3">
 					<SurfaceStatus />
 					<a
@@ -117,19 +119,53 @@ export function ChatApp() {
 			</aside>
 			<main className="flex h-dvh flex-1 flex-col">
 				<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-					<div className="flex items-center gap-2.5">
-						<SaayaMark className="size-5 md:hidden" />
-						<span className="text-muted-foreground text-sm" aria-live="polite">
+					<div className="flex min-w-0 items-center gap-2.5">
+						<SaayaMark className="size-5 shrink-0 md:hidden" />
+						<span className="truncate font-medium text-sm">
 							{view === "memory"
 								? "Memory"
 								: view === "tools"
 									? "Tools"
-									: working
-										? "Working"
-										: "Ready"}
+									: activeTitle}
+						</span>
+						<span
+							className="shrink-0 text-muted-foreground text-xs"
+							aria-live="polite"
+						>
+							{view === "chat" ? liveState : ""}
 						</span>
 					</div>
 					<div className="flex items-center gap-1">
+						<Sheet>
+							<SheetTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="icon"
+										className="md:hidden"
+										aria-label="Conversation history"
+									>
+										<History className="size-4" />
+									</Button>
+								}
+							/>
+							<SheetContent side="left" className="flex w-80 flex-col p-0">
+								<SheetHeader className="border-b px-4 py-3">
+									<SheetTitle className="text-sm">Conversations</SheetTitle>
+								</SheetHeader>
+								<ThreadList
+									threads={threads}
+									activeThread={activeThread}
+									disabled={working}
+									onSelect={(id) => {
+										setView("chat");
+										switchThread(id);
+									}}
+									onRename={rename}
+									onArchive={archive}
+								/>
+							</SheetContent>
+						</Sheet>
 						<Button
 							variant="ghost"
 							size="icon"

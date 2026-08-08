@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { readWireEvents } from "@/lib/sse";
-import { fetchThreads, type ThreadInfo } from "@/lib/threads-api";
+import {
+	archiveThread,
+	fetchThreads,
+	renameThread,
+	type ThreadInfo,
+} from "@/lib/threads-api";
 import type { TranscriptMessage } from "@/lib/wire-events";
 import type { ContextItem } from "./continuity-strip";
 import type { ChatMessage } from "./message";
@@ -177,6 +182,40 @@ export function useChat() {
 		[status, loadThread],
 	);
 
+	const rename = useCallback(
+		async (threadId: string, title: string) => {
+			try {
+				await renameThread(threadId, title);
+				refreshThreads();
+			} catch {
+				toast("Rename failed", { description: "Try again in a moment." });
+			}
+		},
+		[refreshThreads],
+	);
+
+	const archive = useCallback(
+		async (threadId: string) => {
+			try {
+				await archiveThread(threadId);
+				if (threadRef.current === threadId) {
+					threadRef.current = null;
+					setActiveThread(null);
+					localStorage.removeItem(THREAD_KEY);
+					setMessages([]);
+					setContinuity([]);
+				}
+				refreshThreads();
+				toast("Conversation archived", {
+					description: "The transcript and what Saaya learned are kept.",
+				});
+			} catch {
+				toast("Archive failed", { description: "Try again in a moment." });
+			}
+		},
+		[refreshThreads],
+	);
+
 	return {
 		messages,
 		status,
@@ -187,5 +226,7 @@ export function useChat() {
 		send,
 		newConversation,
 		switchThread,
+		rename,
+		archive,
 	};
 }

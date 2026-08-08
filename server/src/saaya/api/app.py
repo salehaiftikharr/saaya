@@ -126,6 +126,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             public_url=resolved.public_url,
             memory_store=_Store(mcp_engine, _embedder(resolved)),
             get_agent=lambda: app.state.agent,
+            activity_mark=lambda thread, text: app.state.thread_activity.mark_active(
+                thread, first_text=text
+            ),
         )
 
     app = FastAPI(title="saaya", lifespan=lifespan)
