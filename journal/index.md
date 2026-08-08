@@ -30,6 +30,7 @@ factual, linked, and never created to inflate documentation.
 - [P-007: Slack channel over Socket Mode](progress/P-007-slack.md)
 - [P-008: Containerized full stack](progress/P-008-deployment.md)
 - [P-009: Dynamic reusable capabilities](progress/P-009-dynamic-tools.md)
+- [P-010: Production posture and container hardening](progress/P-010-production-posture.md)
 
 ## Decisions
 

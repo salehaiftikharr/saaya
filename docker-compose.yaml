@@ -8,6 +8,7 @@ services:
     env_file: .env.local
     environment:
       DATABASE_URL: postgresql://saaya:saaya@postgres:5432/saaya
+      WORKSPACE_DIR: /app/workspace
     volumes:
       - ./workspace:/app/workspace
     ports:

@@ -28,7 +28,7 @@ acceptance criteria and verification gates pass.
 - [x] 9. MCP server and external MCP consumption (P-006)
 - [x] 10. Slack channel (P-007; owner DM round-trip pending, see entry)
 - [x] 11. Dynamic or reusable tool creation (P-009)
-- [~] 12. Deployment and operational hardening (P-008: full compose stack verified; production posture notes remain)
+- [x] 12. Deployment and operational hardening (P-008, P-010)
 
 Standing quality debts being tracked: committed Playwright e2e spec (live
 ring), markdown rendering in chat, thread list UI, restore confirmation step,

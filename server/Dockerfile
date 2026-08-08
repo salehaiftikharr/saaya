@@ -12,5 +12,10 @@ COPY alembic.ini ./
 COPY examples ./examples
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
 
+# Non-root: the app needs only its own tree and the workspace mount.
+RUN groupadd -r saaya && useradd -r -g saaya -d /app -s /usr/sbin/nologin saaya \
+    && mkdir -p /app/workspace && chown -R saaya:saaya /app
+USER saaya
+
 EXPOSE 8000
 CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn --factory saaya.api.app:create_app --host 0.0.0.0 --port 8000"]
