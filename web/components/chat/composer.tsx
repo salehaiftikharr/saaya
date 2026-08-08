@@ -26,7 +26,7 @@ export function Composer({
 	return (
 		<form
 			aria-label="Send a message"
-			className="flex items-end gap-2 border-t bg-background p-4"
+			className="flex shrink-0 items-end gap-2 border-t bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
 			onSubmit={(event) => {
 				event.preventDefault();
 				submit();

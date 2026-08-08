@@ -63,8 +63,8 @@ export function ChatApp() {
 		: ("idle" as const);
 
 	return (
-		<div className="flex min-h-dvh w-full">
-			<aside className="hidden w-64 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
+		<div className="flex h-dvh w-full overflow-hidden">
+			<aside className="hidden h-full min-h-0 w-64 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
 				<div className="flex h-14 items-center gap-2.5 px-4">
 					<EchoMark state={echoState} className="size-5" />
 					<span className="font-semibold text-sm tracking-tight">saaya</span>
@@ -113,7 +113,7 @@ export function ChatApp() {
 					onRename={rename}
 					onArchive={archive}
 				/>
-				<div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-3">
+				<div className="flex shrink-0 items-center justify-between gap-2 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 					<SurfaceStatus />
 					<a
 						href="/about"
@@ -123,7 +123,7 @@ export function ChatApp() {
 					</a>
 				</div>
 			</aside>
-			<main className="flex h-dvh flex-1 flex-col">
+			<main className="flex h-full min-h-0 flex-1 flex-col">
 				<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
 					<div className="flex min-w-0 items-center gap-2.5">
 						<SaayaMark className="size-5 shrink-0 md:hidden" />
@@ -155,7 +155,10 @@ export function ChatApp() {
 									</Button>
 								}
 							/>
-							<SheetContent side="left" className="flex w-80 flex-col p-0">
+							<SheetContent
+								side="left"
+								className="flex h-full min-h-0 w-80 flex-col p-0 pb-[env(safe-area-inset-bottom)]"
+							>
 								<SheetHeader className="border-b px-4 py-3">
 									<SheetTitle className="text-sm">Conversations</SheetTitle>
 								</SheetHeader>
@@ -209,11 +212,11 @@ export function ChatApp() {
 					</div>
 				</header>
 				{view === "memory" ? (
-					<div className="flex-1 overflow-y-auto">
+					<div className="min-h-0 flex-1 overflow-y-auto">
 						<MemoryPanel />
 					</div>
 				) : view === "tools" ? (
-					<div className="flex-1 overflow-y-auto">
+					<div className="min-h-0 flex-1 overflow-y-auto">
 						<ToolsPanel />
 					</div>
 				) : (
@@ -261,7 +264,7 @@ export function ChatApp() {
 								</fieldset>
 							</section>
 						) : (
-							<ScrollArea className="flex-1">
+							<ScrollArea className="min-h-0 flex-1">
 								<div
 									role="log"
 									aria-label="Conversation"

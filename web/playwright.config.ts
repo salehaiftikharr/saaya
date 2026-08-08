@@ -8,4 +8,9 @@ export default defineConfig({
 		baseURL: process.env.SAAYA_BASE_URL ?? "http://localhost:3000",
 	},
 	reporter: [["list"]],
+	webServer: {
+		command: "pnpm dev",
+		url: "http://localhost:3000",
+		reuseExistingServer: true,
+	},
 });
