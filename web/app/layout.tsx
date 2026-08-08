@@ -22,7 +22,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	// Self-hosted default; deployments override via env without a code change.
-	metadataBase: new URL(process.env.SAAYA_PUBLIC_URL ?? "http://localhost:3000"),
+	metadataBase: new URL(
+		process.env.SAAYA_PUBLIC_URL ?? "http://localhost:3000",
+	),
 	title: "Saaya",
 	description: "The coworker that stays.",
 };
