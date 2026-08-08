@@ -14,6 +14,16 @@ export default defineConfig({
 	test: {
 		projects: [
 			{
+				resolve: {
+					alias: { "@": dirname },
+				},
+				test: {
+					name: "unit",
+					environment: "node",
+					include: ["lib/**/*.test.ts", "components/**/*.test.ts"],
+				},
+			},
+			{
 				extends: true,
 				plugins: [
 					// The plugin will run tests for the stories defined in your Storybook config
