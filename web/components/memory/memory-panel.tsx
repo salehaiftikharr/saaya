@@ -74,9 +74,45 @@ export function MemoryPanel() {
 	}
 
 	const currentVersion = overview.versions.at(-1)?.version;
+	const lastHeartbeat = heartbeats[0];
 
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 py-6">
+			<section
+				aria-label="Memory at a glance"
+				className="grid grid-cols-3 gap-3"
+			>
+				<div className="flex flex-col gap-1 rounded-lg border bg-card p-3">
+					<span className="type-eyebrow">Remembered</span>
+					<span className="type-recap-numeral">{overview.semantic.length}</span>
+					<span className="text-muted-foreground text-xs">
+						things about how you work
+					</span>
+				</div>
+				<div className="flex flex-col gap-1 rounded-lg border bg-card p-3">
+					<span className="type-eyebrow">Versions</span>
+					<span className="type-recap-numeral">{currentVersion ?? 0}</span>
+					<span className="text-muted-foreground text-xs">
+						every change reversible
+					</span>
+				</div>
+				<div className="flex flex-col gap-1 rounded-lg border bg-card p-3">
+					<span className="type-eyebrow">Last heartbeat</span>
+					<span className="type-recap-numeral">
+						{lastHeartbeat
+							? new Date(lastHeartbeat.started_at).toLocaleTimeString([], {
+									hour: "numeric",
+									minute: "2-digit",
+								})
+							: "quiet"}
+					</span>
+					<span className="text-muted-foreground text-xs">
+						{lastHeartbeat
+							? heartbeats.length + " runs recorded"
+							: "nothing has needed attention"}
+					</span>
+				</div>
+			</section>
 			<section
 				aria-labelledby="procedural-heading"
 				className="flex flex-col gap-3"

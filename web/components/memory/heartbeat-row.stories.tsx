@@ -52,3 +52,15 @@ export const Failed: Story = {
 		},
 	},
 };
+
+export const QuietRun: Story = {
+	args: {
+		run: {
+			name: "reflect",
+			outcome: "completed",
+			detail: "abdabe72: skipped",
+			started_at: "2026-08-08T04:04:15Z",
+			finished_at: "2026-08-08T04:04:16Z",
+		},
+	},
+};

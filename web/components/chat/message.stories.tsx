@@ -72,3 +72,14 @@ export const AssistantError: Story = {
 		},
 	},
 };
+
+export const AssistantMarkdown: Story = {
+	args: {
+		message: {
+			id: "6",
+			role: "assistant",
+			text: "Here is the plan:\n\n1. **Check sponsorship** first\n2. Then review the stack\n\nUse `pnpm build` before pushing.",
+			activities: [],
+		},
+	},
+};

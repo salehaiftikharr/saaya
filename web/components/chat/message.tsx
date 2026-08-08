@@ -1,4 +1,5 @@
 import { CircleAlert } from "lucide-react";
+import { Streamdown } from "streamdown";
 import { EchoTrail } from "./echo-trail";
 import { type ToolActivity, ToolActivityChip } from "./tool-activity";
 
@@ -40,9 +41,10 @@ export function Message({
 				<EchoTrail />
 			) : (
 				message.text !== "" && (
-					<p className="whitespace-pre-wrap text-sm leading-relaxed">
-						{message.text}
-					</p>
+					<div className="text-sm leading-relaxed [&_code]:font-mono [&_code]:text-[13px]">
+						{/* Streamdown renders incomplete markdown gracefully mid-stream. */}
+						<Streamdown>{message.text}</Streamdown>
+					</div>
 				)
 			)}
 			{message.error && (

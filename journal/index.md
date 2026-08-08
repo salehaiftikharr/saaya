@@ -33,6 +33,7 @@ factual, linked, and never created to inflate documentation.
 - [P-010: Production posture and container hardening](progress/P-010-production-posture.md)
 - [P-011: Design elevation 1, the type foundation](progress/P-011-type-foundation.md)
 - [P-012: Design elevation 2, continuity made visible](progress/P-012-continuity.md)
+- [P-013: Design elevation 3, outcomes first](progress/P-013-outcome-rows.md)
 
 ## Decisions
 

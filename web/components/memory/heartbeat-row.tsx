@@ -9,41 +9,45 @@ export interface HeartbeatRunInfo {
 	finished_at: string | null;
 }
 
+export function heartbeatOutcomeSentence(run: HeartbeatRunInfo): string {
+	if (run.outcome === "failed") {
+		return "A heartbeat failed; Saaya retries on the next beat.";
+	}
+	if (run.detail.includes("applied")) {
+		return "Saaya updated its working knowledge from recent conversations.";
+	}
+	if (run.detail.includes("rejected")) {
+		return "A proposed memory change was checked and turned away.";
+	}
+	return "Saaya looked at recent work; nothing needed to change.";
+}
+
 export function HeartbeatRow({ run }: { run: HeartbeatRunInfo }) {
 	const failed = run.outcome === "failed";
 	return (
-		<li className="flex items-center gap-3 rounded-lg border bg-card p-3">
+		<li className="flex items-start gap-3 rounded-lg border bg-card p-3">
 			<Activity
 				aria-hidden
 				className={cn(
-					"size-4 shrink-0",
+					"mt-0.5 size-4 shrink-0",
 					failed ? "text-destructive" : "text-primary",
 				)}
 			/>
 			<div className="min-w-0 flex-1">
-				<p className="text-sm">
-					<span className="font-mono">{run.name}</span>
-					<span
-						className={cn(
-							"ml-2 rounded px-1.5 py-0.5 text-xs",
-							failed
-								? "bg-destructive/10 text-destructive"
-								: "bg-accent text-accent-foreground",
-						)}
-					>
-						{run.outcome}
-					</span>
+				<p className="text-sm leading-relaxed">
+					{heartbeatOutcomeSentence(run)}
 				</p>
-				{run.detail !== "" && (
-					<p className="truncate text-muted-foreground text-xs">{run.detail}</p>
-				)}
+				<details>
+					<summary className="cursor-pointer text-muted-foreground text-xs">
+						Run record
+					</summary>
+					<p className="mt-1.5 font-mono text-muted-foreground text-xs">
+						{run.name} - {run.outcome}
+						{run.detail ? ` - ${run.detail}` : ""} -{" "}
+						{new Date(run.started_at).toLocaleString()}
+					</p>
+				</details>
 			</div>
-			<time
-				dateTime={run.started_at}
-				className="shrink-0 text-muted-foreground text-xs"
-			>
-				{new Date(run.started_at).toLocaleTimeString()}
-			</time>
 		</li>
 	);
 }
