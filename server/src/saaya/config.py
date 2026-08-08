@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     slack_app_token: str = ""
 
     workspace_dir: Path = REPO_ROOT / "workspace"
+    jobs_workspace_dir: Path = REPO_ROOT / "workspace" / "jobs"
+    jobs_worker_enabled: bool = True
 
     mcp_token: str = ""
     public_url: str = "http://localhost:8000"

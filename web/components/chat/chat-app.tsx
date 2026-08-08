@@ -3,6 +3,7 @@
 import {
 	ArrowDown,
 	Brain,
+	BriefcaseBusiness,
 	History,
 	MessageSquarePlus,
 	Wrench,
@@ -24,6 +25,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import { WorkPanel } from "@/components/work/work-panel";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
@@ -46,7 +48,9 @@ export function ChatApp() {
 		stop,
 		retry,
 	} = useChat();
-	const [view, setView] = useState<"chat" | "memory" | "tools">("chat");
+	const [view, setView] = useState<"chat" | "memory" | "tools" | "work">(
+		"chat",
+	);
 	const [nearBottom, setNearBottom] = useState(true);
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 	const scrollHostRef = useRef<HTMLDivElement | null>(null);
@@ -128,6 +132,15 @@ export function ChatApp() {
 						Memory
 					</Button>
 					<Button
+						variant={view === "work" ? "secondary" : "ghost"}
+						className="justify-start gap-2"
+						aria-pressed={view === "work"}
+						onClick={() => setView(view === "work" ? "chat" : "work")}
+					>
+						<BriefcaseBusiness className="size-4" />
+						Work
+					</Button>
+					<Button
 						variant={view === "tools" ? "secondary" : "ghost"}
 						className="justify-start gap-2"
 						aria-pressed={view === "tools"}
@@ -167,7 +180,9 @@ export function ChatApp() {
 								? "Memory"
 								: view === "tools"
 									? "Tools"
-									: activeTitle}
+									: view === "work"
+										? "Work"
+										: activeTitle}
 						</span>
 						<span
 							className="shrink-0 text-muted-foreground text-xs"
@@ -234,6 +249,16 @@ export function ChatApp() {
 							<Brain className="size-4" />
 						</Button>
 						<Button
+							variant={view === "work" ? "secondary" : "ghost"}
+							size="icon"
+							className="md:hidden"
+							aria-label="Work"
+							aria-pressed={view === "work"}
+							onClick={() => setView(view === "work" ? "chat" : "work")}
+						>
+							<BriefcaseBusiness className="size-4" />
+						</Button>
+						<Button
 							variant={view === "tools" ? "secondary" : "ghost"}
 							size="icon"
 							className="md:hidden"
@@ -253,6 +278,10 @@ export function ChatApp() {
 				) : view === "tools" ? (
 					<div className="min-h-0 flex-1 overflow-y-auto">
 						<ToolsPanel />
+					</div>
+				) : view === "work" ? (
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<WorkPanel />
 					</div>
 				) : (
 					<>

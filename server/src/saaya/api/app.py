@@ -10,6 +10,7 @@ from psycopg import AsyncConnection
 from psycopg.rows import DictRow, dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from saaya.api.job_routes import jobs_router
 from saaya.api.memory_routes import memory_router
 from saaya.api.routes import router
 from saaya.api.tools_routes import tools_router
@@ -86,6 +87,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 app, engine, activity, resolved.heartbeat_quiet_seconds
             )
             scheduler = start_scheduler(heartbeat, resolved.heartbeat_interval_seconds)
+            from saaya.jobs.store import JobStore
+            from saaya.jobs.worker import JobWorker
+
+            job_store = JobStore(engine)
+            app.state.job_store = job_store
+            job_worker = None
+            if resolved.jobs_worker_enabled and resolved.claude_api_key:
+                from saaya.jobs.agents import build_executor, build_planner
+                from saaya.jobs.runner import JobRunner
+
+                job_runner = JobRunner(
+                    job_store,
+                    saver,
+                    resolved.jobs_workspace_dir,
+                    planner=build_planner(resolved),
+                    executor=build_executor(resolved, job_store),
+                )
+                job_worker = JobWorker(job_store, job_runner)
+                await job_worker.start()
+            app.state.job_worker = job_worker
             app.state.mcp_enabled = mcp_app is not None
             app.state.slack_connected = False
             slack = None
@@ -108,6 +129,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     yield
             finally:
                 scheduler.shutdown(wait=False)
+                if job_worker is not None:
+                    await job_worker.stop()
                 if slack is not None:
                     await slack.close()
         finally:
@@ -135,6 +158,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(router)
     app.include_router(memory_router)
     app.include_router(tools_router)
+    app.include_router(jobs_router)
     if mcp_app is not None:
         app.mount("/mcp", mcp_app)
     return app

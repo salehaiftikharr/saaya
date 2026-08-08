@@ -4,7 +4,17 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -105,3 +115,46 @@ class DynamicToolVersion(Base):
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class Job(Base):
+    """Durable work that outlives a chat turn. Completion is a recorded
+    transition with evidence in the ledger, never an inference (ADR-003)."""
+
+    __tablename__ = "jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    thread_id: Mapped[str | None] = mapped_column(String(255), default=None)
+    goal: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(String(20), default="queued")
+    error: Mapped[str | None] = mapped_column(Text, default=None)
+    step_budget: Mapped[int] = mapped_column(Integer, default=12)
+    wall_clock_budget_s: Mapped[int] = mapped_column(Integer, default=600)
+    workspace: Mapped[str] = mapped_column(Text)
+    last_event_seq: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+
+class JobEvent(Base):
+    """Append-only ledger: everything that happens to a Job is one row here,
+    written before the jobs row changes, in the same transaction. The UI and
+    the SSE tail render these rows verbatim (ADR-003)."""
+
+    __tablename__ = "job_events"
+    __table_args__ = (
+        UniqueConstraint("job_id", "seq", name="uq_job_events_job_seq"),
+        Index("ix_job_events_job_id", "job_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    seq: Mapped[int] = mapped_column(Integer)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actor: Mapped[str] = mapped_column(String(16))
+    type: Mapped[str] = mapped_column(String(40))
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
