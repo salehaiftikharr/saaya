@@ -5,12 +5,14 @@ persisted (ADR-003)."""
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from saaya.jobs import states
+from saaya.jobs.schedules import ScheduleStore, ScheduleView
 from saaya.jobs.states import IllegalTransition
 from saaya.jobs.store import (
     ApprovalStore,
@@ -180,3 +182,51 @@ async def job_events(request: Request, job_id: str, after_seq: int = 0) -> Strea
             await asyncio.sleep(0.7)
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+class CreateScheduleBody(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    task: str = Field(min_length=1, max_length=4000)
+    kind: str = Field(pattern="^(at|every)$")
+    at_time: datetime | None = None
+    interval_s: int | None = Field(default=None, ge=60, le=7 * 24 * 3600)
+
+
+class EnabledBody(BaseModel):
+    enabled: bool
+
+
+def _schedules(request: Request) -> "ScheduleStore":
+    store = getattr(request.app.state, "schedule_store", None)
+    if store is None:
+        raise HTTPException(status_code=503, detail="schedules are not available")
+    return store
+
+
+@jobs_router.post("/api/schedules")
+async def create_schedule(request: Request, body: CreateScheduleBody) -> "ScheduleView":
+    try:
+        return await _schedules(request).create(
+            name=" ".join(body.name.split()),
+            task=body.task,
+            kind=body.kind,
+            at_time=body.at_time,
+            interval_s=body.interval_s,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@jobs_router.get("/api/schedules")
+async def list_schedules(request: Request) -> "list[ScheduleView]":
+    return await _schedules(request).list_all()
+
+
+@jobs_router.patch("/api/schedules/{schedule_id}")
+async def set_schedule_enabled(
+    request: Request, schedule_id: str, body: EnabledBody
+) -> "ScheduleView":
+    updated = await _schedules(request).set_enabled(schedule_id, body.enabled)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="unknown schedule")
+    return updated

@@ -197,3 +197,27 @@ class JobApproval(Base):
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     decision: Mapped[str | None] = mapped_column(String(16), default=None)
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+
+class UserSchedule(Base):
+    """A user-owned clock. A fire creates a normal Job, so scheduled work
+    inherits the ledger, budgets, approvals, and recovery (ADR-010).
+    Schedules are disabled, never deleted, without the owner's ask."""
+
+    __tablename__ = "user_schedules"
+    __table_args__ = (Index("ix_user_schedules_next_fire_at", "next_fire_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(80))
+    task: Mapped[str] = mapped_column(Text)
+    kind: Mapped[str] = mapped_column(String(8))
+    at_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    interval_s: Mapped[int | None] = mapped_column(Integer, default=None)
+    enabled: Mapped[bool] = mapped_column(default=True)
+    last_fired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    next_fire_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

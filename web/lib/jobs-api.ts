@@ -199,3 +199,63 @@ export const STATE_LABEL: Record<JobState, string> = {
 	cancelled: "Cancelled",
 	completed: "Completed",
 };
+
+export type ScheduleInfo = {
+	id: string;
+	name: string;
+	task: string;
+	kind: "at" | "every";
+	at_time: string | null;
+	interval_s: number | null;
+	enabled: boolean;
+	last_fired_at: string | null;
+	next_fire_at: string;
+	last_job_id: string | null;
+};
+
+export async function listSchedules(): Promise<ScheduleInfo[]> {
+	const response = await fetch("/api/schedules");
+	if (!response.ok) throw new Error("Schedules are unreachable.");
+	return response.json();
+}
+
+export async function setScheduleEnabled(
+	id: string,
+	enabled: boolean,
+): Promise<void> {
+	const response = await fetch(`/api/schedules/${id}`, {
+		method: "PATCH",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ enabled }),
+	});
+	if (!response.ok) throw new Error("The schedule could not be updated.");
+}
+
+export function untilTime(iso: string): string {
+	const seconds = Math.max(
+		0,
+		Math.floor((new Date(iso).getTime() - Date.now()) / 1000),
+	);
+	if (seconds < 60) return "in under a minute";
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `in ${minutes}m`;
+	const hours = Math.floor(minutes / 60);
+	const rest = minutes % 60;
+	return rest > 0 ? `in ${hours}h ${rest}m` : `in ${hours}h`;
+}
+
+export function cadenceSentence(schedule: ScheduleInfo): string {
+	if (schedule.kind === "at") {
+		return `Once, at ${new Date(schedule.next_fire_at).toLocaleString()}`;
+	}
+	const seconds = schedule.interval_s ?? 0;
+	if (seconds % 3600 === 0 && seconds >= 3600) {
+		const hours = seconds / 3600;
+		return `Every ${hours} ${hours === 1 ? "hour" : "hours"}`;
+	}
+	if (seconds % 60 === 0) {
+		const minutes = seconds / 60;
+		return `Every ${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
+	}
+	return `Every ${seconds} seconds`;
+}

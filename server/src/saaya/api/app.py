@@ -131,6 +131,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 job_worker = JobWorker(job_store, job_runner)
                 await job_worker.start()
             app.state.job_worker = job_worker
+            from saaya.jobs.schedules import ScheduleStore, ScheduleTicker
+
+            schedule_store = ScheduleStore(engine)
+            app.state.schedule_store = schedule_store
+            schedule_ticker = None
+            if job_worker is not None:
+                schedule_ticker = ScheduleTicker(schedule_store, job_store)
+                await schedule_ticker.start()
             app.state.mcp_enabled = mcp_app is not None
             app.state.slack_connected = False
             slack = None
@@ -153,6 +161,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     yield
             finally:
                 scheduler.shutdown(wait=False)
+                if schedule_ticker is not None:
+                    await schedule_ticker.stop()
                 if job_worker is not None:
                     await job_worker.stop()
                 if slack is not None:

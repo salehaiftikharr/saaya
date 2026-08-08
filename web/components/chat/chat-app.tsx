@@ -126,6 +126,7 @@ export function ChatApp() {
 	const hasWaitingJob = threadJobs.some(
 		(job) => job.state === "waiting_approval",
 	);
+	const anyWaitingJob = allJobs.some((job) => job.state === "waiting_approval");
 	const hasLiveJob = threadJobs.some((job) =>
 		["planning", "running", "retrying"].includes(job.state),
 	);
@@ -181,6 +182,11 @@ export function ChatApp() {
 					>
 						<BriefcaseBusiness className="size-4" />
 						Work
+						{anyWaitingJob && (
+							<span className="ml-auto size-1.5 rounded-full bg-amber-500">
+								<span className="sr-only">a job is waiting on you</span>
+							</span>
+						)}
 					</Button>
 					<Button
 						variant={view === "tools" ? "secondary" : "ghost"}
@@ -353,12 +359,18 @@ export function ChatApp() {
 						<Button
 							variant={view === "work" ? "secondary" : "ghost"}
 							size="icon"
-							className="md:hidden"
+							className="relative md:hidden"
 							aria-label="Work"
 							aria-pressed={view === "work"}
 							onClick={() => setView(view === "work" ? "chat" : "work")}
 						>
 							<BriefcaseBusiness className="size-4" />
+							{anyWaitingJob && (
+								<span
+									aria-hidden
+									className="absolute top-1 right-1 size-1.5 rounded-full bg-amber-500"
+								/>
+							)}
 						</Button>
 						<Button
 							variant={view === "tools" ? "secondary" : "ghost"}

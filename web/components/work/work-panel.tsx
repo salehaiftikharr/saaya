@@ -4,12 +4,14 @@ import { ArrowLeft, FileText, OctagonX, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { ApprovalCard } from "@/components/work/approval-card";
 import { ArtifactList } from "@/components/work/artifact-list";
 import { JobStateBadge } from "@/components/work/job-state-badge";
 import { JobTimeline } from "@/components/work/job-timeline";
 import { fetchHealth, type JobsHealth } from "@/lib/health-api";
 import {
+	cadenceSentence,
 	cancelJob,
 	decideApproval,
 	fetchJob,
@@ -17,7 +19,11 @@ import {
 	type JobInfo,
 	LIVE_STATES,
 	listJobs,
+	listSchedules,
 	retryJob,
+	type ScheduleInfo,
+	setScheduleEnabled,
+	untilTime,
 } from "@/lib/jobs-api";
 import { relativeTime } from "@/lib/threads-api";
 
@@ -30,7 +36,38 @@ export function WorkPanel() {
 	const [detail, setDetail] = useState<JobDetail | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [ops, setOps] = useState<JobsHealth | null>(null);
+	const [schedules, setSchedules] = useState<ScheduleInfo[]>([]);
 	const openId = useRef<string | null>(null);
+
+	const loadSchedules = useCallback(() => {
+		listSchedules()
+			.then(setSchedules)
+			.catch(() => {});
+	}, []);
+
+	useEffect(() => {
+		loadSchedules();
+	}, [loadSchedules]);
+
+	const toggleSchedule = useCallback(
+		async (schedule: ScheduleInfo, enabled: boolean) => {
+			try {
+				await setScheduleEnabled(schedule.id, enabled);
+				toast(
+					enabled
+						? `${schedule.name} is on; next fire counts from now`
+						: `${schedule.name} is paused`,
+				);
+			} catch (failure) {
+				toast.error(
+					String(failure instanceof Error ? failure.message : failure),
+				);
+			} finally {
+				loadSchedules();
+			}
+		},
+		[loadSchedules],
+	);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -238,6 +275,47 @@ export function WorkPanel() {
 				<p className="text-destructive text-sm" role="alert">
 					{error}
 				</p>
+			)}
+			{schedules.length > 0 && (
+				<section aria-label="Schedules" className="flex flex-col gap-2">
+					<h3 className="type-eyebrow">Schedules</h3>
+					<ul className="flex flex-col gap-1.5">
+						{schedules.map((schedule) => (
+							<li
+								key={schedule.id}
+								className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
+							>
+								<div className="min-w-0 flex-1">
+									<p className="truncate text-sm">{schedule.name}</p>
+									<p className="text-muted-foreground text-xs">
+										{cadenceSentence(schedule)}
+										{schedule.enabled &&
+											` · next ${untilTime(schedule.next_fire_at)}`}
+										{schedule.last_job_id && (
+											<>
+												{" · "}
+												<button
+													type="button"
+													className="underline underline-offset-4 hover:text-foreground"
+													onClick={() =>
+														schedule.last_job_id && open(schedule.last_job_id)
+													}
+												>
+													last run
+												</button>
+											</>
+										)}
+									</p>
+								</div>
+								<Switch
+									checked={schedule.enabled}
+									aria-label={`${schedule.name} enabled`}
+									onCheckedChange={(next) => toggleSchedule(schedule, next)}
+								/>
+							</li>
+						))}
+					</ul>
+				</section>
 			)}
 			{jobs.length === 0 && !error ? (
 				<p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground text-sm">
