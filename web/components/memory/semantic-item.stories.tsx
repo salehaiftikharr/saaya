@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { demoSemanticItems } from "@/lib/demo-fixtures";
 import { SemanticItemRow } from "./semantic-item";
 
 const meta = {
@@ -18,27 +19,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Preference: Story = {
-	args: {
-		item: {
-			id: "1",
-			kind: "preference",
-			text: "Writes commit messages in plain sentence case with no emojis.",
-			confidence: 0.7,
-			reinforcement_count: 3,
-			learned_at: "2026-08-08T03:52:00Z",
-		},
-	},
+	args: { item: demoSemanticItems[0] },
 };
 
 export const FreshFact: Story = {
-	args: {
-		item: {
-			id: "2",
-			kind: "fact",
-			text: "The team demo happens Thursday afternoons.",
-			confidence: 0.7,
-			reinforcement_count: 0,
-			learned_at: "2026-08-08T03:52:00Z",
-		},
-	},
+	args: { item: demoSemanticItems[1] },
 };

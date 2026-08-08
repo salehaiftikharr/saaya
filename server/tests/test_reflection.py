@@ -80,7 +80,7 @@ class TestValidation:
 class TestRunner:
     async def test_applied_proposal_writes_and_versions(self, memory_dir: Path) -> None:
         async def propose(current: str, transcript: str) -> str:
-            return current + "- saleha prefers tabs\n"
+            return current + "- noor prefers tabs\n"
 
         runner = ReflectionRunner(memory_dir, propose)
         result = await runner.run("transcript", "learned a preference")

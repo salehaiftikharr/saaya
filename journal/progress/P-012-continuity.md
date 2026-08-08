@@ -38,7 +38,7 @@ as the working language.
 
 - Gates: server ruff/pyright/pytest 63; web biome/tsc/vitest 31 with the
   axe gate; production build.
-- Live: context endpoint returned the three real memories for the F-1 OPT
+- Live: context endpoint returned the three real memories for the personal-context
   thread; browser screenshot shows the strip above the restored transcript
   in dark; the port-stealing pitfall from P-011 avoided by stopping the
   server container before host verification.

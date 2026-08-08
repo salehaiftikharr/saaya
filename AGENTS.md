@@ -153,3 +153,23 @@ A change is done when its tests pass, every gate above is green, the real flow
 has been exercised end to end (Playwright for UI-facing work), both themes are
 verified for visual changes, the journal records the increment, and the diff
 contains nothing that does not earn its place.
+
+## Privacy (non-negotiable)
+
+The owner's private context is never source material. Nothing from Claude
+conversation history, Claude memory, personal-context files, real Saaya
+conversations, live semantic or procedural memory, the owner's identity,
+work, domains, or environment may appear in any repo-committed or
+public-facing artifact: marketing pages, demos, screenshots, tours, README
+examples, docs, stories, tests, snapshots, seeds, fixtures, journal entries,
+social assets, commit messages, or error examples. Access to private context
+is never permission to publish, reproduce, summarize, or transform it.
+
+Demonstration content comes only from the reviewed fictional dataset in
+web/lib/demo-fixtures.ts (Noor Rahman, Northstar Labs, atlas.example;
+reserved domains only). Marketing and story surfaces never read live memory,
+conversation storage, databases, or APIs. The privacy gate
+(web/lib/privacy.test.ts) scans the entire tracked tree for known personal
+identifiers and fails the suite on any match; extend its list when new
+personal terms enter the owner's context. Real user data appears only inside
+the authenticated product surfaces of the user it belongs to.

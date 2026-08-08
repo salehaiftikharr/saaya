@@ -53,10 +53,10 @@ No LLM judges anywhere.
   with no network).
 - Live: taught two facts in one thread; a zero-context thread recalled both
   via recall_memories. Ran reflection over a real conversation: version 2
-  applied with two precise bullets; a brand-new thread then led with visa
-  sponsorship unprompted (the learned constraint shaping behavior); rollback
-  to v1 removed it, roll-forward to v2 restored it; ledger shows versions
-  1-4 append-only; identity.md byte-identical throughout.
+  applied with two precise bullets; a brand-new thread then led with the
+  learned personal constraint unprompted (the constraint shaping behavior);
+  rollback to v1 removed it, roll-forward to v2 restored it; ledger shows
+  versions 1-4 append-only; identity.md byte-identical throughout.
 
 ## Open risks
 

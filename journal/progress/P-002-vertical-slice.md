@@ -60,8 +60,8 @@ port 8000; unit vitest project with path alias.
 - Live loop over HTTP: SSE frames observed in order (thread.started,
   tool.started, tool.finished with real output, 4 text deltas, turn.done).
 - Restart survival: server process killed and restarted; the same thread
-  answered "Your name is Saleha, and you asked me what the exact current
-  time was" from the Postgres checkpointer.
+  correctly recalled the user's name and their earlier question from the
+  Postgres checkpointer.
 - Real browser via Playwright MCP: message sent through the UI, tool chip and
   streamed reply rendered, page reloaded, transcript restored from the
   server, follow-up correctly recalled name and profession, both themes

@@ -17,10 +17,9 @@ supersedes: []
 
 ## Objective
 
-Owner review of /about flagged personal information in committed fixtures
-(name, visa status, portfolio domain, personal workflow). Repo-committed
-examples must be anonymized; live product data in her private database is
-hers and untouched.
+Owner review of /about flagged personal information in committed fixtures.
+Repo-committed examples must be anonymized; live product data in the
+owner's private database is untouched.
 
 ## Work completed
 
@@ -33,8 +32,8 @@ shapes, neutral details.
 
 ## Verification
 
-- Source grep for name/domain/visa terms across app/about and components:
-  zero matches.
+- Source grep for the flagged personal terms across app/about and
+  components: zero matches.
 - Rendered-page probe for the same terms on /about: empty. Light-theme
   screenshots reviewed (this pass also completes the /about light-theme
   check from P-015).

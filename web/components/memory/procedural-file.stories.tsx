@@ -14,7 +14,7 @@ export const Writable: Story = {
 		file: {
 			name: "how-i-work.md",
 			content:
-				"# How I work together\n\n## Context\n\n- Release notes go out before the version tag is pushed.",
+				"# How I work with the Atlas team\n\n## Context\n\n- Release notes go out before the version tag is pushed.",
 			protected: false,
 		},
 	},

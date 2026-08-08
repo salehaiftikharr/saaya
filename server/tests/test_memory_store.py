@@ -42,7 +42,7 @@ async def test_recall_finds_the_related_memory_first(engine: AsyncEngine) -> Non
     store = SemanticMemoryStore(engine, embed)
     marker = uuid.uuid4().hex[:8]
     await store.remember(
-        text=f"{marker} saleha prefers tabs over spaces",
+        text=f"{marker} noor prefers tabs over spaces",
         kind="preference",
         why_retained="stated directly",
         source_thread_id="t-1",
@@ -53,7 +53,7 @@ async def test_recall_finds_the_related_memory_first(engine: AsyncEngine) -> Non
         why_retained="stated directly",
         source_thread_id="t-1",
     )
-    recalled = await store.recall(f"{marker} saleha prefers tabs over spaces", limit=2)
+    recalled = await store.recall(f"{marker} noor prefers tabs over spaces", limit=2)
     assert recalled[0].text.endswith("tabs over spaces")
     assert recalled[0].distance < recalled[1].distance
 

@@ -22,7 +22,7 @@ supersedes: []
   reverse, quiet, everywhere, extend) told entirely with real product
   components (Message, ToolActivityChip, EchoTrail, ContinuityStrip,
   SemanticItemRow, VersionRow, HeartbeatRow, ToolRow) inside a quiet
-  DeviceFrame treatment; every fixture is genuine product output (the OPT
+  DeviceFrame treatment; every fixture mirrored genuine product output (the
   continuity items, wodahs, version 6 from the autonomous heartbeat, the
   surfaces health JSON), stated in a comment at the top of the page.
 - Beat and DeviceFrame components; editorial display sections alternate

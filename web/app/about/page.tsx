@@ -11,9 +11,19 @@ import { HeartbeatRow } from "@/components/memory/heartbeat-row";
 import { SemanticItemRow } from "@/components/memory/semantic-item";
 import { VersionRow } from "@/components/memory/version-row";
 import { ToolRow } from "@/components/tools/tool-row";
+import {
+	demoContinuity,
+	demoConversation,
+	demoHealth,
+	demoHeartbeats,
+	demoSemanticItems,
+	demoTool,
+	demoToolTurn,
+	demoVersions,
+} from "@/lib/demo-fixtures";
 
-// Fixtures mirror genuine product output: the shapes, states, and flows are
-// real, with personal details replaced by neutral stand-ins.
+// Every demonstration on this page comes from lib/demo-fixtures.ts: one
+// reviewed, intentionally fictional dataset. This page never reads live data.
 const noop = () => {};
 
 export default function About() {
@@ -37,22 +47,9 @@ export default function About() {
 			>
 				<DeviceFrame address="saaya.local/chat">
 					<div className="flex flex-col gap-4">
-						<Message
-							message={{
-								id: "b2-u",
-								role: "user",
-								text: "Context for how we work together: merging to main deploys staging automatically, so never suggest manual deploy steps.",
-								activities: [],
-							}}
-						/>
-						<Message
-							message={{
-								id: "b2-a",
-								role: "assistant",
-								text: "Got it, locked in. **Deploys** - merge to main and staging is live. I will focus on getting the change ready to merge, not on deploy ceremony.",
-								activities: [],
-							}}
-						/>
+						{demoConversation.map((message) => (
+							<Message key={message.id} message={message} />
+						))}
 					</div>
 				</DeviceFrame>
 			</Beat>
@@ -64,21 +61,7 @@ export default function About() {
 			>
 				<DeviceFrame address="saaya.local/chat">
 					<div className="flex flex-col gap-4">
-						<Message
-							message={{
-								id: "b3-a",
-								role: "assistant",
-								text: "wodahs",
-								activities: [
-									{
-										id: "b3-t",
-										name: "reverse_text",
-										state: "done",
-										outputPreview: "wodahs",
-									},
-								],
-							}}
-						/>
+						<Message message={demoToolTurn} />
 						<EchoTrail />
 					</div>
 				</DeviceFrame>
@@ -90,22 +73,7 @@ export default function About() {
 				copy="Close the tab, restart the server, return days later. The thread and its context are still here."
 			>
 				<DeviceFrame address="saaya.local/chat">
-					<ContinuityStrip
-						items={[
-							{
-								kind: "constraint",
-								text: "Release notes go out before the version tag is pushed, every time.",
-							},
-							{
-								kind: "fact",
-								text: "Merging to main deploys staging automatically; no manual steps.",
-							},
-							{
-								kind: "entity",
-								text: "The team demo happens Thursday afternoons.",
-							},
-						]}
-					/>
+					<ContinuityStrip items={[...demoContinuity]} />
 				</DeviceFrame>
 			</Beat>
 
@@ -115,26 +83,9 @@ export default function About() {
 				copy="Every remembered thing carries its provenance: where it came from, when, and how often it mattered since."
 			>
 				<ul className="flex flex-col gap-2">
-					<SemanticItemRow
-						item={{
-							id: "b5-1",
-							kind: "preference",
-							text: "Writes commit messages in plain sentence case with no emojis.",
-							confidence: 0.7,
-							reinforcement_count: 4,
-							learned_at: "2026-08-08T03:45:00Z",
-						}}
-					/>
-					<SemanticItemRow
-						item={{
-							id: "b5-2",
-							kind: "preference",
-							text: "Considers a change unfinished until it has been exercised end to end.",
-							confidence: 0.7,
-							reinforcement_count: 1,
-							learned_at: "2026-08-08T04:04:00Z",
-						}}
-					/>
+					{demoSemanticItems.map((item) => (
+						<SemanticItemRow key={item.id} item={item} />
+					))}
 				</ul>
 			</Beat>
 
@@ -144,28 +95,15 @@ export default function About() {
 				copy="Saaya's working knowledge is versioned. A restore is itself recorded, so nothing is ever silently lost. The identity file is protected and never writable."
 			>
 				<ul className="flex flex-col gap-2">
-					<VersionRow
-						entry={{
-							version: 6,
-							reason: "heartbeat reflection over thread a7c41f02",
-							changed_files: ["how-i-work.md"],
-							recorded_at: "2026-08-08T08:00:00Z",
-						}}
-						current
-						disabled
-						onRollback={noop}
-					/>
-					<VersionRow
-						entry={{
-							version: 3,
-							reason: "rollback to version 1",
-							changed_files: ["how-i-work.md"],
-							recorded_at: "2026-08-08T03:54:00Z",
-						}}
-						current={false}
-						disabled
-						onRollback={noop}
-					/>
+					{demoVersions.map((entry, index) => (
+						<VersionRow
+							key={entry.version}
+							entry={entry}
+							current={index === 0}
+							disabled
+							onRollback={noop}
+						/>
+					))}
 				</ul>
 			</Beat>
 
@@ -175,24 +113,9 @@ export default function About() {
 				copy="On a schedule, Saaya looks at settled conversations and decides whether anything durable was learned. When nothing meaningful happened, it says nothing at all."
 			>
 				<ul className="flex flex-col gap-2">
-					<HeartbeatRow
-						run={{
-							name: "reflect",
-							outcome: "completed",
-							detail: "a7c41f02: applied",
-							started_at: "2026-08-08T08:00:00Z",
-							finished_at: "2026-08-08T08:00:02Z",
-						}}
-					/>
-					<HeartbeatRow
-						run={{
-							name: "reflect",
-							outcome: "completed",
-							detail: "e3b95d11: skipped",
-							started_at: "2026-08-08T04:04:15Z",
-							finished_at: "2026-08-08T04:04:16Z",
-						}}
-					/>
+					{demoHeartbeats.map((run) => (
+						<HeartbeatRow key={run.started_at} run={run} />
+					))}
 				</ul>
 			</Beat>
 
@@ -203,10 +126,7 @@ export default function About() {
 			>
 				<DeviceFrame address="saaya.local/api/health">
 					<pre className="overflow-x-auto font-mono text-muted-foreground text-xs leading-relaxed">
-						{`{
-  "status": "ok",
-  "surfaces": { "web": "ok", "slack": "connected", "mcp": "enabled" }
-}`}
+						{demoHealth}
 					</pre>
 				</DeviceFrame>
 			</Beat>
@@ -218,15 +138,7 @@ export default function About() {
 			>
 				<ul className="flex flex-col gap-2">
 					<ToolRow
-						tool={{
-							name: "reverse_text",
-							description: "Reverses a string of text.",
-							params: { text: "string" },
-							script:
-								'import json, os\nparams = json.loads(os.environ["TOOL_INPUT"])\nprint(params["text"][::-1])',
-							status: "draft",
-							version: 1,
-						}}
+						tool={demoTool}
 						disabled
 						onActivate={noop}
 						onDisable={noop}

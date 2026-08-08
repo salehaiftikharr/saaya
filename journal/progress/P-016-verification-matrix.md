@@ -18,7 +18,7 @@ supersedes: []
 ## What the matrix ran
 
 Playwright MCP across 1440/1280/834/390 x light/dark on / (populated with
-the real OPT thread) plus /about at 390 and 1440; reduced-motion emulation;
+the real personal-context thread) plus /about at 390 and 1440; reduced-motion emulation;
 keyboard tab order (composer then sidebar nav, all reachable); screenshots
 captured per cell.
 
