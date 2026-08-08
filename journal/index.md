@@ -4,7 +4,7 @@ title: Saaya project journal index
 type: index
 status: active
 created: 2026-08-07
-updated: 2026-08-07
+updated: 2026-08-08
 tags:
   - journal
 related:
@@ -22,6 +22,7 @@ factual, linked, and never created to inflate documentation.
 
 - [P-000: Phase 0 research and architecture](progress/P-000-phase-0-research.md)
 - [P-001: Phase 1 foundation, first increment](progress/P-001-phase-1-foundation.md)
+- [P-002: Phase 2 vertical slice](progress/P-002-vertical-slice.md)
 
 ## Decisions
 

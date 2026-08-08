@@ -1,0 +1,81 @@
+# Saaya
+
+Saaya (saa-yaa, Urdu for shadow) is a persistent AI coworker. It keeps its own
+workspace, remembers how you work, and gets more useful the longer you work
+together. Conversations survive restarts; memory compounds with provenance;
+every self-directed memory change is validated deterministically, versioned,
+and reversible.
+
+Status: early. The first vertical slice works end to end: a web conversation
+with streamed responses and visible tool activity, checkpointed in Postgres,
+resumable after a full server restart.
+
+## Architecture
+
+Two applications, one contract. Details in
+[docs/research/architecture-decisions.md](docs/research/architecture-decisions.md)
+and [AGENTS.md](AGENTS.md).
+
+- `server/`: Python 3.13. LangChain Deep Agents harness on LangGraph with
+  Postgres checkpointing, served by FastAPI with a typed SSE event stream.
+- `web/`: Next.js with TypeScript strict, Tailwind, shadcn (base-nova on
+  Base UI), Storybook with an axe accessibility gate, Biome.
+- `docker-compose.yaml`: PostgreSQL 17 with pgvector.
+- `brand/`: the Saaya identity system (BRAND.md, tokens, marks).
+- `journal/`, `memory/`, `docs/research/`: decisions, progress, and the
+  source studies behind the design.
+
+## Run it
+
+Requires Docker, uv, pnpm, and a `.env.local` at the repo root (copy
+`.env.example` and fill in keys).
+
+```console
+docker compose up -d
+cd server && uv sync && uv run uvicorn --factory saaya.api.app:create_app --port 8000
+cd web && pnpm install && pnpm dev
+```
+
+Open http://localhost:3000. Ask Saaya what time it is to watch a tool run.
+
+## Verification gates
+
+```console
+cd server && uv run ruff format --check . && uv run ruff check . && uv run pyright && uv run pytest
+cd web && pnpm lint && pnpm typecheck && pnpm test && pnpm build
+```
+
+CI runs exactly these. Green locally must mean green in CI.
+
+## Rebuild from scratch
+
+The commands that created this structure, in order. Generator flags drift;
+when a command's current flags differ, the deviation is recorded in
+`journal/progress/`.
+
+```console
+git init saaya && cd saaya
+uv init server --package --python 3.13
+cd server
+uv add deepagents langgraph langchain langchain-anthropic langchain-openai \
+  langgraph-checkpoint-postgres fastapi "uvicorn[standard]" sqlalchemy \
+  alembic asyncpg pydantic-settings
+uv add --dev pytest pytest-asyncio ruff pyright
+cd ..
+pnpm create next-app@latest web --typescript --tailwind --app --no-src-dir \
+  --import-alias "@/*" --use-pnpm --no-eslint --yes
+cd web
+pnpm dlx shadcn@latest init -b base --preset nova --yes
+pnpm dlx shadcn@latest add button separator tooltip skeleton textarea scroll-area --yes
+pnpm dlx storybook@latest init --yes
+pnpm add -D @biomejs/biome && pnpm dlx @biomejs/biome init
+pnpm add next-themes
+```
+
+`docker-compose.yaml` is hand-written (no generator exists); it is the
+documented exception.
+
+## License
+
+Not yet chosen; all rights reserved until a license lands. (MIT is proposed
+and pending the owner's decision.)
