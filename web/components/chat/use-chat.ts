@@ -258,6 +258,7 @@ export function useChat() {
 		switchThread,
 		rename,
 		archive,
+		refreshThreads,
 		stop,
 		retry,
 	};

@@ -1,7 +1,7 @@
 "use client";
 
 import { PanelRightClose } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,8 +14,10 @@ import {
 	fetchJob,
 	type JobDetail,
 	type JobInfo,
+	jobEventsUrl,
 	LIVE_STATES,
 	listJobs,
+	TERMINAL_STATES,
 } from "@/lib/jobs-api";
 
 // The conversation-owned working surface, adapted from Rendi: it opens when
@@ -48,7 +50,15 @@ export function useAllJobs(): JobInfo[] {
 	return jobs;
 }
 
-function JobBench({ jobId }: { jobId: string }) {
+export function pickActiveJob(jobs: JobInfo[]): JobInfo | undefined {
+	return (
+		jobs.find((job) => LIVE_STATES.has(job.state)) ??
+		jobs.find((job) => job.state === "waiting_approval") ??
+		jobs[0]
+	);
+}
+
+export function JobBench({ jobId }: { jobId: string }) {
 	const [detail, setDetail] = useState<JobDetail | null>(null);
 
 	const load = useCallback(() => {
@@ -62,19 +72,50 @@ function JobBench({ jobId }: { jobId: string }) {
 		load();
 	}, [load]);
 
+	// The ledger tail replaces polling: the SSE stream carries the same
+	// persisted rows the snapshot returns, so each arriving row triggers one
+	// snapshot refresh, and a dropped stream reconnects with backoff.
+	const seqRef = useRef(0);
 	useEffect(() => {
-		if (!detail) return;
-		const state = detail.job.state;
-		// waiting_approval and queued also poll: decisions can arrive from
-		// the Work view, and the claim loop picks queued jobs up on its own.
-		const settled =
-			!LIVE_STATES.has(state) &&
-			state !== "waiting_approval" &&
-			state !== "queued";
-		if (settled) return;
-		const timer = setInterval(load, 1500);
-		return () => clearInterval(timer);
-	}, [detail, load]);
+		seqRef.current = detail?.job.last_event_seq ?? 0;
+	}, [detail]);
+	const streaming = detail ? !TERMINAL_STATES.has(detail.job.state) : false;
+	useEffect(() => {
+		if (!streaming) return;
+		let source: EventSource | null = null;
+		let retry: ReturnType<typeof setTimeout> | undefined;
+		let stopped = false;
+		const open = () => {
+			if (stopped) return;
+			source = new EventSource(jobEventsUrl(jobId, seqRef.current));
+			source.onmessage = (message) => {
+				try {
+					const row = JSON.parse(message.data) as {
+						seq?: number;
+						type?: string;
+					};
+					if (typeof row.seq === "number") seqRef.current = row.seq;
+					if (row.type === "end_of_stream") {
+						stopped = true;
+						source?.close();
+					}
+				} catch {
+					// Malformed frames still trigger a snapshot refresh below.
+				}
+				load();
+			};
+			source.onerror = () => {
+				source?.close();
+				if (!stopped) retry = setTimeout(open, 2500);
+			};
+		};
+		open();
+		return () => {
+			stopped = true;
+			source?.close();
+			clearTimeout(retry);
+		};
+	}, [streaming, jobId, load]);
 
 	// waiting_approval is not in LIVE_STATES, but a decision arrives from
 	// this panel, so refresh right after deciding.
@@ -148,10 +189,7 @@ export function Workbench({
 	jobs: JobInfo[];
 	onClose: () => void;
 }) {
-	const active =
-		jobs.find((job) => LIVE_STATES.has(job.state)) ??
-		jobs.find((job) => job.state === "waiting_approval") ??
-		jobs[0];
+	const active = pickActiveJob(jobs);
 	if (!active) return null;
 	const others = jobs.length - 1;
 	return (

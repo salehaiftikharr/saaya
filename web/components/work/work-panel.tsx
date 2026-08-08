@@ -8,6 +8,7 @@ import { ApprovalCard } from "@/components/work/approval-card";
 import { ArtifactList } from "@/components/work/artifact-list";
 import { JobStateBadge } from "@/components/work/job-state-badge";
 import { JobTimeline } from "@/components/work/job-timeline";
+import { fetchHealth, type JobsHealth } from "@/lib/health-api";
 import {
 	cancelJob,
 	decideApproval,
@@ -28,7 +29,27 @@ export function WorkPanel() {
 	const [jobs, setJobs] = useState<JobInfo[]>([]);
 	const [detail, setDetail] = useState<JobDetail | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [ops, setOps] = useState<JobsHealth | null>(null);
 	const openId = useRef<string | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		const poll = () => {
+			fetchHealth()
+				.then((health) => {
+					if (!cancelled) setOps(health.jobs ?? null);
+				})
+				.catch(() => {
+					if (!cancelled) setOps(null);
+				});
+		};
+		poll();
+		const timer = setInterval(poll, 15_000);
+		return () => {
+			cancelled = true;
+			clearInterval(timer);
+		};
+	}, []);
 
 	const loadList = useCallback(() => {
 		listJobs()
@@ -207,6 +228,12 @@ export function WorkPanel() {
 				survives restarts and resumes where it stopped; everything below is read
 				from that ledger.
 			</p>
+			{ops && (
+				<p className="rounded-md border bg-card px-3 py-2 font-mono text-[11px] text-muted-foreground">
+					worker {ops.worker} · {ops.queued} queued · {ops.live} live ·{" "}
+					{ops.waiting} waiting on you
+				</p>
+			)}
 			{error && (
 				<p className="text-destructive text-sm" role="alert">
 					{error}

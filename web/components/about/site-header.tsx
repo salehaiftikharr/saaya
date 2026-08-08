@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 const ANCHORS = [
 	{ href: "#work", label: "Product" },
+	{ href: "#jobs", label: "Jobs" },
 	{ href: "#memory", label: "Memory" },
 	{ href: "#channels", label: "Channels" },
 	{ href: "#tools", label: "Tools" },

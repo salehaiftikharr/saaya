@@ -1,6 +1,8 @@
 "use client";
 
 import {
+	Archive,
+	ChevronRight,
 	Hash,
 	MessageCircle,
 	MoreHorizontal,
@@ -35,9 +37,11 @@ import {
 import { Input } from "@/components/ui/input";
 import type { JobInfo, JobState } from "@/lib/jobs-api";
 import {
+	fetchArchivedThreads,
 	GROUP_ORDER,
 	groupForTimestamp,
 	relativeTime,
+	restoreThread,
 	type ThreadInfo,
 } from "@/lib/threads-api";
 import { cn } from "@/lib/utils";
@@ -100,6 +104,7 @@ export function ThreadList({
 	onSelect,
 	onRename,
 	onArchive,
+	onRestored,
 }: {
 	threads: ThreadInfo[];
 	activeThread: string | null;
@@ -108,11 +113,19 @@ export function ThreadList({
 	onSelect: (id: string) => void;
 	onRename: (id: string, title: string) => void;
 	onArchive: (id: string) => void;
+	onRestored?: () => void;
 }) {
 	const [query, setQuery] = useState("");
 	const [renaming, setRenaming] = useState<ThreadInfo | null>(null);
 	const [renameDraft, setRenameDraft] = useState("");
 	const [archiving, setArchiving] = useState<ThreadInfo | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
+	const [archived, setArchived] = useState<ThreadInfo[] | null>(null);
+	const loadArchived = () => {
+		fetchArchivedThreads()
+			.then(setArchived)
+			.catch(() => setArchived([]));
+	};
 
 	const grouped = useMemo(() => {
 		const q = query.trim().toLowerCase();
@@ -250,6 +263,65 @@ export function ThreadList({
 						</div>
 					);
 				})}
+				<div className="mt-1 border-t pt-1">
+					<button
+						type="button"
+						aria-expanded={showArchived}
+						onClick={() => {
+							const next = !showArchived;
+							setShowArchived(next);
+							if (next) loadArchived();
+						}}
+						className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-muted-foreground text-xs hover:bg-secondary/50 hover:text-foreground"
+					>
+						<Archive aria-hidden className="size-3" />
+						Archived
+						<ChevronRight
+							aria-hidden
+							className={cn(
+								"ml-auto size-3 transition-transform",
+								showArchived && "rotate-90",
+							)}
+						/>
+					</button>
+					{showArchived &&
+						(archived === null ? (
+							<p className="px-2 py-1.5 text-muted-foreground text-xs">
+								Loading…
+							</p>
+						) : archived.length === 0 ? (
+							<p className="px-2 py-1.5 text-muted-foreground text-xs">
+								Nothing is archived.
+							</p>
+						) : (
+							archived.map((thread) => (
+								<div
+									key={thread.id}
+									className="flex items-center gap-2 rounded-md px-2 py-1.5"
+								>
+									<span className="min-w-0 flex-1 truncate text-muted-foreground text-sm">
+										{thread.title}
+									</span>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-6 shrink-0 px-2 text-xs"
+										onClick={async () => {
+											try {
+												await restoreThread(thread.id);
+												loadArchived();
+												onRestored?.();
+											} catch {
+												// The row stays; the next attempt can succeed.
+											}
+										}}
+									>
+										Restore
+									</Button>
+								</div>
+							))
+						))}
+				</div>
 			</nav>
 
 			<Dialog

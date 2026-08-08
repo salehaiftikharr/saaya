@@ -91,7 +91,7 @@ correctly. The gap and the fix are both in the transcript.
 
 ## Evidence
 
-- Server: 110 tests green (approval flow through the real tool closures,
+- Server: 109 tests green (approval flow through the real tool closures,
   rejection never executes, runner holds and resumes, artifact rows,
   thread-scoped artifact reads, policy verdicts, scrubbed-env canary).
   ruff format, ruff check, pyright 0.

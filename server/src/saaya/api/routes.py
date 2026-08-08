@@ -21,10 +21,18 @@ class ChatRequest(BaseModel):
     thread_id: str | None = None
 
 
+class JobsHealth(BaseModel):
+    worker: str
+    queued: int
+    live: int
+    waiting: int
+
+
 class HealthResponse(BaseModel):
     status: str
     version: str
     surfaces: dict[str, str]
+    jobs: JobsHealth | None = None
 
 
 @router.get("/api/health")
@@ -35,7 +43,27 @@ async def health(request: Request) -> HealthResponse:
         "slack": "connected" if getattr(state, "slack_connected", False) else "off",
         "mcp": "enabled" if getattr(state, "mcp_enabled", False) else "off",
     }
-    return HealthResponse(status="ok", version=__version__, surfaces=surfaces)
+    jobs_health: JobsHealth | None = None
+    job_store = getattr(state, "job_store", None)
+    if job_store is not None:
+        counts = await job_store.counts()
+        live = sum(counts.get(name, 0) for name in ("planning", "running", "retrying"))
+        jobs_health = JobsHealth(
+            worker="running" if getattr(state, "job_worker", None) is not None else "off",
+            queued=counts.get("queued", 0),
+            live=live,
+            waiting=counts.get("waiting_approval", 0),
+        )
+        surfaces["jobs"] = (
+            f"{jobs_health.waiting} waiting on you"
+            if jobs_health.waiting
+            else f"{jobs_health.live} live"
+            if jobs_health.live
+            else "idle"
+            if jobs_health.worker == "running"
+            else "off"
+        )
+    return HealthResponse(status="ok", version=__version__, surfaces=surfaces, jobs=jobs_health)
 
 
 def _sse(event: WireEvent) -> str:
@@ -167,3 +195,26 @@ async def archive_thread(request: Request, thread_id: str) -> dict[str, str]:
     if not await request.app.state.thread_activity.archive(thread_id):
         raise HTTPException(status_code=404, detail="unknown thread")
     return {"status": "archived"}
+
+
+@router.post("/api/threads/{thread_id}/restore")
+async def restore_thread(request: Request, thread_id: str) -> dict[str, str]:
+    if not await request.app.state.thread_activity.restore(thread_id):
+        raise HTTPException(status_code=404, detail="unknown thread")
+    return {"status": "restored"}
+
+
+@router.get("/api/threads/archived")
+async def archived_threads(request: Request) -> list[ThreadInfo]:
+    from saaya.api.titles import FALLBACK_TITLE
+
+    rows = await request.app.state.thread_activity.archived_threads()
+    return [
+        ThreadInfo(
+            id=row.id,
+            title=row.title or FALLBACK_TITLE,
+            source=thread_source(row.id),
+            last_activity_at=row.last_activity_at.isoformat(),
+        )
+        for row in rows
+    ]

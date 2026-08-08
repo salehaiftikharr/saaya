@@ -71,3 +71,16 @@ export const GROUP_ORDER: ThreadGroup[] = [
 	"Previous 7 days",
 	"Older",
 ];
+
+export async function restoreThread(id: string): Promise<void> {
+	const response = await fetch(`/api/threads/${id}/restore`, {
+		method: "POST",
+	});
+	if (!response.ok) throw new Error("This conversation could not be restored.");
+}
+
+export async function fetchArchivedThreads(): Promise<ThreadInfo[]> {
+	const response = await fetch("/api/threads/archived");
+	if (!response.ok) throw new Error("Archived conversations are unreachable.");
+	return response.json();
+}

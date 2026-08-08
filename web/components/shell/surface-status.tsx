@@ -11,7 +11,11 @@ type Snapshot = Record<string, string> | "offline";
 
 function dotClass(value: string | undefined): string {
 	if (value === undefined) return "bg-destructive";
-	return UP_VALUES.has(value) ? "bg-primary" : "bg-border";
+	if (value.includes("waiting")) return "bg-amber-500";
+	if (UP_VALUES.has(value) || value === "idle" || value.endsWith("live")) {
+		return "bg-primary";
+	}
+	return "bg-border";
 }
 
 /* Quiet truth about the doors: one dot per surface, red only when the

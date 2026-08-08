@@ -18,10 +18,13 @@ social sizes all remain the same mark at rest.
 | listening | body breathes slightly; echo still | 2.4s, infinite |
 | thinking | echo wanders a pixel around its offset | 1.8s, infinite |
 | tool | echo stretches toward the lower right, working | 1.2s, infinite |
+| working | echo carries a slow vertical bob; sustained background work | 2.8s, infinite |
+| waiting-approval | echo reaches apart once and holds there; waiting is a still state | 1.2s, once, holds |
 | remembering | echo rises to the body and settles back | once |
 | heartbeat | echo pulses apart and returns, two beats | once |
 | success | echo catches up to the body, holds, releases | once |
 | reconnecting | echo compresses toward the body repeatedly | 1s, infinite |
+| offline | no motion; echo fades to 15 percent, body to half | static |
 | failure | no motion; echo dims to 45 percent | static |
 
 ## Constraints

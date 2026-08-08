@@ -1,7 +1,15 @@
+export interface JobsHealth {
+	worker: string;
+	queued: number;
+	live: number;
+	waiting: number;
+}
+
 export interface HealthInfo {
 	status: string;
 	version: string;
 	surfaces: Record<string, string>;
+	jobs?: JobsHealth | null;
 }
 
 export async function fetchHealth(): Promise<HealthInfo> {

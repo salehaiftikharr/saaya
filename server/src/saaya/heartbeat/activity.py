@@ -131,3 +131,34 @@ class ThreadActivity:
 
         async with self._engine.connect() as connection:
             return await connection.run_sync(_update)
+
+    async def restore(self, thread_id: str) -> bool:
+        """Archival's inverse; nothing was deleted, so nothing is rebuilt."""
+
+        def _update(sync_conn: Connection) -> bool:
+            with Session(bind=sync_conn) as session:
+                thread = session.get(Thread, thread_id)
+                if thread is None:
+                    return False
+                thread.archived_at = None
+                session.commit()
+                return True
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_update)
+
+    async def archived_threads(self, *, limit: int = 100) -> list[Thread]:
+        def _query(sync_conn: Connection) -> list[Thread]:
+            with Session(bind=sync_conn, expire_on_commit=False) as session:
+                rows = session.execute(
+                    select(Thread)
+                    .where(Thread.archived_at.is_not(None))
+                    .order_by(Thread.archived_at.desc())
+                ).scalars()
+                keep = [
+                    row for row in rows if not row.id.startswith(("sched:", "test-", "first-hour:"))
+                ]
+                return keep[:limit]
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_query)

@@ -5,10 +5,13 @@ export type EchoState =
 	| "listening"
 	| "thinking"
 	| "tool"
+	| "working"
+	| "waiting-approval"
 	| "remembering"
 	| "heartbeat"
 	| "success"
 	| "reconnecting"
+	| "offline"
 	| "failure";
 
 const STATE_LABELS: Record<EchoState, string> = {
@@ -16,10 +19,13 @@ const STATE_LABELS: Record<EchoState, string> = {
 	listening: "Saaya is listening",
 	thinking: "Saaya is thinking",
 	tool: "Saaya is using a tool",
+	working: "Saaya is working on a job",
+	"waiting-approval": "Saaya is waiting on your approval",
 	remembering: "Saaya is remembering",
 	heartbeat: "Saaya heartbeat",
 	success: "Saaya finished",
 	reconnecting: "Saaya is reconnecting",
+	offline: "Saaya is offline",
 	failure: "Saaya hit a failure",
 };
 

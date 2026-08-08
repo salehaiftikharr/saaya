@@ -6,7 +6,15 @@ together. Conversations survive restarts; memory compounds with provenance;
 every self-directed memory change is validated deterministically, versioned,
 and reversible.
 
-Status: the twelve-item roadmap is implemented and verified end to end.
+Beyond chat, Saaya runs durable background Jobs: hand it a goal and it plans,
+executes step by step inside a contained per-job workspace, pauses for your
+approval before consequential commands, registers its outputs as artifacts,
+and resumes from a checkpoint if the process dies mid-run. Every event is an
+append-only ledger row, so what you see after a restart is what happened.
+
+Status: the twelve-item roadmap is implemented and verified end to end, and
+the Jobs phase (durable work, approvals, artifacts, restart recovery) is
+implemented with its demonstration recorded in the journal.
 
 | Capability | State |
 | --- | --- |
@@ -19,6 +27,10 @@ Status: the twelve-item roadmap is implemented and verified end to end.
 | Slack over Socket Mode | working, round-trip verified |
 | Dynamic tools (propose, approve, disable, roll back) | working, restart-verified |
 | Containerized stack (non-root) | working, e2e-verified |
+| Durable Jobs (plan, step ledger, budgets) | working, kill -9 recovery verified |
+| Per-job contained workspace and command policy | working, boundary-tested |
+| Approvals that really withhold execution | working, live-demonstrated |
+| Job artifacts, served and rendered | working |
 | Design system (two-register type, echo grammar, story page) | shipped |
 | Privacy gate over the tracked tree | enforced in CI |
 | CI (exact local gates) | green |

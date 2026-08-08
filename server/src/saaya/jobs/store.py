@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import Connection, select, update
+from sqlalchemy import Connection, func, select, update
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import Session
 
@@ -257,6 +257,16 @@ class JobStore:
                 return _view(job)
 
         return await self._run(_claim)
+
+    async def counts(self) -> dict[str, int]:
+        """Bounded aggregates for the health surface."""
+
+        def _counts(sync_conn: Connection) -> dict[str, int]:
+            with Session(bind=sync_conn) as session:
+                rows = session.execute(select(Job.state, func.count()).group_by(Job.state)).all()
+                return {str(state): int(count) for state, count in rows}
+
+        return await self._run(_counts)
 
     async def stranded_live(self) -> list[JobView]:
         """Jobs a previous process left mid-flight; the worker resumes these

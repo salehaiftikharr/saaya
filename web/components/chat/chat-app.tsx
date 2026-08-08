@@ -27,7 +27,13 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { WorkPanel } from "@/components/work/work-panel";
-import { useAllJobs, Workbench } from "@/components/work/workbench";
+import {
+	JobBench,
+	pickActiveJob,
+	useAllJobs,
+	Workbench,
+} from "@/components/work/workbench";
+import { cn } from "@/lib/utils";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
@@ -47,6 +53,7 @@ export function ChatApp() {
 		switchThread,
 		rename,
 		archive,
+		refreshThreads,
 		stop,
 		retry,
 	} = useChat();
@@ -113,11 +120,23 @@ export function ChatApp() {
 	const activeTitle =
 		threads.find((t) => t.id === activeThread)?.title ??
 		(messages.length > 0 ? "Conversation" : "New conversation");
+	const hasWaitingJob = threadJobs.some(
+		(job) => job.state === "waiting_approval",
+	);
+	const hasLiveJob = threadJobs.some((job) =>
+		["planning", "running", "retrying"].includes(job.state),
+	);
+	// Streaming turns win the mark; otherwise the conversation's job
+	// activity speaks: waiting beats working, working beats idle.
 	const echoState = working
 		? lastMessage?.activities.some((a) => a.state === "running")
 			? ("tool" as const)
 			: ("thinking" as const)
-		: ("idle" as const);
+		: hasWaitingJob
+			? ("waiting-approval" as const)
+			: hasLiveJob
+				? ("working" as const)
+				: ("idle" as const);
 
 	return (
 		<div className="flex h-dvh w-full overflow-hidden">
@@ -179,6 +198,7 @@ export function ChatApp() {
 					}}
 					onRename={rename}
 					onArchive={archive}
+					onRestored={refreshThreads}
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 					<SurfaceStatus />
@@ -190,7 +210,7 @@ export function ChatApp() {
 					</a>
 				</div>
 			</aside>
-			<main className="flex h-full min-h-0 flex-1 flex-col">
+			<main className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
 				<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
 					<div className="flex min-w-0 items-center gap-2.5">
 						<SaayaMark className="size-5 shrink-0 md:hidden" />
@@ -224,6 +244,48 @@ export function ChatApp() {
 							>
 								<PanelRight className="size-4" />
 							</Button>
+						)}
+						{view === "chat" && threadJobs.length > 0 && (
+							<Sheet>
+								<SheetTrigger
+									render={
+										<Button
+											variant="ghost"
+											size="icon"
+											className="relative lg:hidden"
+											aria-label="Workbench"
+										>
+											<BriefcaseBusiness className="size-4" />
+											<span
+												aria-hidden
+												className={cn(
+													"absolute top-1 right-1 size-1.5 rounded-full",
+													threadJobs.some(
+														(job) => job.state === "waiting_approval",
+													)
+														? "bg-amber-500"
+														: "bg-primary",
+												)}
+											/>
+										</Button>
+									}
+								/>
+								<SheetContent
+									side="right"
+									className="flex h-full min-h-0 w-[88vw] max-w-md flex-col p-0 pb-[env(safe-area-inset-bottom)]"
+								>
+									<SheetHeader className="border-b px-4 py-3">
+										<SheetTitle className="type-eyebrow text-sm">
+											Workbench
+										</SheetTitle>
+									</SheetHeader>
+									<div className="min-h-0 flex-1 overflow-y-auto">
+										{pickActiveJob(threadJobs) && (
+											<JobBench jobId={pickActiveJob(threadJobs)?.id ?? ""} />
+										)}
+									</div>
+								</SheetContent>
+							</Sheet>
 						)}
 						<Sheet>
 							<SheetTrigger
@@ -377,7 +439,7 @@ export function ChatApp() {
 									<div
 										role="log"
 										aria-label="Conversation"
-										className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6"
+										className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6"
 									>
 										<ContinuityStrip items={continuity} />
 										{messages.map((message, index) => (

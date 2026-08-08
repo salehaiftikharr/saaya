@@ -14,6 +14,9 @@ import { SemanticItemRow } from "@/components/memory/semantic-item";
 import { VersionRow } from "@/components/memory/version-row";
 import { ToolRow } from "@/components/tools/tool-row";
 import { Button } from "@/components/ui/button";
+import { ApprovalCard } from "@/components/work/approval-card";
+import { JobStateBadge } from "@/components/work/job-state-badge";
+import { JobTimeline } from "@/components/work/job-timeline";
 import {
 	demoArchitecture,
 	demoChannelContinuity,
@@ -21,6 +24,9 @@ import {
 	demoConversation,
 	demoDiff,
 	demoHeartbeats,
+	demoJobApproval,
+	demoJobEvents,
+	demoJobGoal,
 	demoQuietSummary,
 	demoSemanticItems,
 	demoTool,
@@ -65,6 +71,8 @@ export default function About() {
 					</div>
 					<p className="flex max-w-xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
 						<span>Persistent conversations</span>
+						<span aria-hidden>-</span>
+						<span>Durable jobs with approvals</span>
 						<span aria-hidden>-</span>
 						<span>Provenance-backed memory</span>
 						<span aria-hidden>-</span>
@@ -134,7 +142,28 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="03 - Return"
+					eyebrow="03 - Delegate"
+					id="jobs"
+					title="Hand it a goal, not just a message"
+					copy="A substantial request becomes a durable Job: a visible plan, step-by-step progress, a contained workspace, and an approval that really withholds the consequential command until you decide. The ledger below is the product's own format."
+					variant="split"
+				>
+					<div className="flex flex-col gap-3">
+						<div className="flex items-center gap-2.5">
+							<JobStateBadge state="completed" />
+							<p className="min-w-0 flex-1 truncate text-muted-foreground text-sm">
+								{demoJobGoal}
+							</p>
+						</div>
+						<ApprovalCard approval={demoJobApproval} />
+						<div className="max-h-80 overflow-y-auto rounded-lg border bg-card p-2">
+							<JobTimeline events={[...demoJobEvents]} />
+						</div>
+					</div>
+				</Beat>
+
+				<Beat
+					eyebrow="04 - Return"
 					title="Come back without starting over"
 					copy="Close the tab, restart the server, return next week. The thread is where you left it, and what mattered arrives with you."
 					variant="band"
@@ -143,7 +172,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="04 - Learn"
+					eyebrow="05 - Learn"
 					id="memory"
 					title="See what it learned, and why"
 					copy="Every remembered thing carries its provenance: where it came from, when, and how often it mattered since. Expand any row."
@@ -157,7 +186,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="05 - Reverse"
+					eyebrow="06 - Reverse"
 					id="control"
 					title="Review or reverse any change"
 					copy="Working knowledge is versioned like code. Read the change as a diff; restore any point, and the restore itself is recorded."
@@ -184,7 +213,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="06 - Quiet"
+					eyebrow="07 - Quiet"
 					title="A heartbeat that respects quiet"
 					copy="On a schedule, Saaya looks at settled conversations. When nothing durable happened, it says nothing at all."
 					variant="band"
@@ -212,7 +241,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="07 - Everywhere"
+					eyebrow="08 - Everywhere"
 					id="channels"
 					title="One coworker, three doors"
 					copy="Web, Slack, and MCP reach the same memory and the same threads. A conversation started in one door continues through the next."
@@ -236,7 +265,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="08 - Extend"
+					eyebrow="09 - Extend"
 					id="tools"
 					title="Extend it safely"
 					copy="Saaya proposes reusable capabilities as small scripts. Nothing runs until you read the code and approve it; every change stays reversible."
@@ -253,7 +282,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="09 - Trust"
+					eyebrow="10 - Trust"
 					id="trust"
 					title="Boundaries you can read"
 					copy="What Saaya can touch is a short list, and every row of it is a real control in the product, not a policy paragraph."
@@ -305,7 +334,7 @@ export default function About() {
 				</Beat>
 
 				<Beat
-					eyebrow="10 - How"
+					eyebrow="11 - How"
 					id="architecture"
 					title="Why it holds together"
 					copy="Saaya is built on LangChain's Deep Agents harness and LangGraph's durable state. Each piece exists for an outcome you can feel."

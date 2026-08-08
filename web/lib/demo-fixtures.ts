@@ -250,6 +250,12 @@ export const demoTrustMatrix = [
 		gate: "Nothing runs before approval",
 	},
 	{
+		surface: "Job workspaces",
+		reads: "Files inside that job's own directory",
+		writes: "The same directory, size-capped",
+		gate: "Command allowlist; writes wait for your approval",
+	},
+	{
 		surface: "Slack and MCP",
 		reads: "Messages sent to Saaya",
 		writes: "Replies in the same thread",
@@ -258,6 +264,11 @@ export const demoTrustMatrix = [
 ] as const;
 
 export const demoArchitecture = [
+	{
+		outcome: "A job that dies mid-run resumes where it stopped.",
+		detail:
+			"Job execution is a LangGraph graph checkpointed in Postgres. The worker rescans on boot, resumes from the last completed step, and the ledger shows the seam instead of smoothing it over.",
+	},
 	{
 		outcome: "Return next week without re-explaining the work.",
 		detail:
@@ -284,3 +295,175 @@ export const demoArchitecture = [
 			"Reusable tools are drafts with reviewable code; approval materializes the script, and disable or rollback is one action.",
 	},
 ] as const;
+
+// One fictional Job, told through the same ledger the product persists:
+// plan, a real failure, recovery, an approval that held, and an artifact.
+export const demoJobGoal =
+	"Review the Atlas release checklist, run the checks, and produce a readiness report.";
+
+export const demoJobEvents = [
+	{
+		seq: 1,
+		at: "2026-08-05T14:02:04Z",
+		actor: "user",
+		type: "job_created",
+		payload: {},
+	},
+	{
+		seq: 2,
+		at: "2026-08-05T14:02:05Z",
+		actor: "system",
+		type: "state_changed",
+		payload: { from: "queued", to: "planning" },
+	},
+	{
+		seq: 3,
+		at: "2026-08-05T14:02:11Z",
+		actor: "saaya",
+		type: "plan_created",
+		payload: {
+			count: 3,
+			steps: [
+				{
+					intent: "Read the checklist and map each check to a command",
+					creates: [],
+				},
+				{ intent: "Run the checks and fix anything that fails", creates: [] },
+				{
+					intent: "Write RELEASE_READINESS.md and register it as an artifact",
+					creates: ["RELEASE_READINESS.md"],
+				},
+			],
+		},
+	},
+	{
+		seq: 4,
+		at: "2026-08-05T14:02:11Z",
+		actor: "saaya",
+		type: "state_changed",
+		payload: { from: "planning", to: "running" },
+	},
+	{
+		seq: 5,
+		at: "2026-08-05T14:02:12Z",
+		actor: "saaya",
+		type: "step_started",
+		payload: {
+			n: 1,
+			of: 3,
+			intent: "Read the checklist and map each check to a command",
+		},
+	},
+	{
+		seq: 6,
+		at: "2026-08-05T14:02:31Z",
+		actor: "saaya",
+		type: "step_completed",
+		payload: { n: 1, summary: "Three checks found; each maps to one command." },
+	},
+	{
+		seq: 7,
+		at: "2026-08-05T14:02:32Z",
+		actor: "saaya",
+		type: "step_started",
+		payload: {
+			n: 2,
+			of: 3,
+			intent: "Run the checks and fix anything that fails",
+		},
+	},
+	{
+		seq: 8,
+		at: "2026-08-05T14:02:36Z",
+		actor: "saaya",
+		type: "command_executed",
+		payload: { argv: ["python3", "checks/run_checks.py"], exit_code: 1 },
+	},
+	{
+		seq: 9,
+		at: "2026-08-05T14:03:02Z",
+		actor: "saaya",
+		type: "step_completed",
+		payload: {
+			n: 2,
+			summary:
+				"The pricing check failed on an off-by-one discount; fixed the line and re-ran clean.",
+		},
+	},
+	{
+		seq: 10,
+		at: "2026-08-05T14:03:04Z",
+		actor: "saaya",
+		type: "approval_requested",
+		payload: { preview: "Run `git add .` in the job workspace." },
+	},
+	{
+		seq: 11,
+		at: "2026-08-05T14:03:04Z",
+		actor: "saaya",
+		type: "state_changed",
+		payload: { from: "running", to: "waiting_approval" },
+	},
+	{
+		seq: 12,
+		at: "2026-08-05T14:09:40Z",
+		actor: "user",
+		type: "approval_decided",
+		payload: { decision: "approved" },
+	},
+	{
+		seq: 13,
+		at: "2026-08-05T14:09:41Z",
+		actor: "saaya",
+		type: "state_changed",
+		payload: { from: "waiting_approval", to: "running" },
+	},
+	{
+		seq: 14,
+		at: "2026-08-05T14:09:44Z",
+		actor: "user",
+		type: "approval_accepted",
+		payload: { preview: "Run `git add .` in the job workspace." },
+	},
+	{
+		seq: 15,
+		at: "2026-08-05T14:09:44Z",
+		actor: "saaya",
+		type: "command_executed",
+		payload: { argv: ["git", "add", "."], exit_code: 0 },
+	},
+	{
+		seq: 16,
+		at: "2026-08-05T14:10:02Z",
+		actor: "saaya",
+		type: "artifact_created",
+		payload: { path: "RELEASE_READINESS.md", title: "Atlas readiness report" },
+	},
+	{
+		seq: 17,
+		at: "2026-08-05T14:10:03Z",
+		actor: "saaya",
+		type: "job_completed",
+		payload: { steps_completed: 3 },
+	},
+	{
+		seq: 18,
+		at: "2026-08-05T14:10:03Z",
+		actor: "saaya",
+		type: "state_changed",
+		payload: { from: "running", to: "completed" },
+	},
+] as const;
+
+export const demoJobApproval = {
+	id: "demo-approval",
+	job_id: "demo-job",
+	kind: "command",
+	preview:
+		"Run `git add .` in the job workspace. git add writes to the workspace.",
+	payload: {},
+	requested_at: "2026-08-05T14:03:04Z",
+	decided_at: "2026-08-05T14:09:40Z",
+	decision: "approved",
+	consumed_at: "2026-08-05T14:09:44Z",
+} as const;
