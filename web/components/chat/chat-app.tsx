@@ -67,10 +67,18 @@ export function ChatApp() {
 						Tools
 					</Button>
 				</div>
-				<p className="mt-auto px-4 pb-4 text-muted-foreground text-xs">
-					Conversations survive restarts. Close this tab and come back; Saaya
-					picks up where you left off.
-				</p>
+				<div className="mt-auto flex flex-col gap-2 px-4 pb-4">
+					<p className="text-muted-foreground text-xs">
+						Conversations survive restarts. Close this tab and come back; Saaya
+						picks up where you left off.
+					</p>
+					<a
+						href="/about"
+						className="text-muted-foreground text-xs underline-offset-4 hover:text-foreground hover:underline"
+					>
+						What Saaya is
+					</a>
+				</div>
 			</aside>
 			<main className="flex h-dvh flex-1 flex-col">
 				<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
