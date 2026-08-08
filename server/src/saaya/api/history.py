@@ -16,9 +16,9 @@ class TranscriptMessage(BaseModel):
 
 def _text_of(message: Any) -> str:
     text = getattr(message, "text", "")
-    # BaseMessage.text is a property in current langchain-core and a method
-    # in older releases; tolerate both.
-    if callable(text):
+    # BaseMessage.text is a str property in current langchain-core and a
+    # method in older releases; check str first to avoid the deprecation shim.
+    if not isinstance(text, str) and callable(text):
         text = text()
     if isinstance(text, str) and text:
         return text

@@ -25,11 +25,16 @@ factual, linked, and never created to inflate documentation.
 - [P-002: Phase 2 vertical slice](progress/P-002-vertical-slice.md)
 - [P-003: Semantic memory, procedural memory, and reflection](progress/P-003-memory-and-reflection.md)
 - [P-004: Memory panel in the web app](progress/P-004-memory-ui.md)
+- [P-005: The reflect heartbeat](progress/P-005-heartbeat.md)
 
 ## Decisions
 
 - [ADR-001: Deep Agents as the primary harness](decisions/ADR-001-deep-agents-harness.md)
 - [ADR-002: Serve the graph from our own FastAPI app](decisions/ADR-002-own-fastapi-server.md)
+
+## Roadmap
+
+- [Roadmap checklist](roadmap.md)
 
 ## Experiments
 

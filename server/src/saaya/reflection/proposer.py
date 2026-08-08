@@ -36,8 +36,9 @@ def build_proposer(settings: Settings) -> Proposer:
                 },
             ]
         )
-        text = response.text() if callable(response.text) else response.text
-        cleaned = str(text).strip()
+        # .text is a str-subclass accessor in langchain-core 1.x; plain str()
+        # takes the property path without touching the deprecated call shim.
+        cleaned = str(response.text).strip()
         if cleaned == "SKIP" or cleaned == "":
             return None
         return cleaned + "\n" if not cleaned.endswith("\n") else cleaned

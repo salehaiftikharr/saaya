@@ -3,16 +3,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+	fetchHeartbeats,
 	fetchMemoryOverview,
+	type HeartbeatRunInfo,
 	type MemoryOverview,
 	rollbackTo,
 } from "@/lib/memory-api";
+import { HeartbeatRow } from "./heartbeat-row";
 import { ProceduralFileCard } from "./procedural-file";
 import { SemanticItemRow } from "./semantic-item";
 import { VersionRow } from "./version-row";
 
 export function MemoryPanel() {
 	const [overview, setOverview] = useState<MemoryOverview | null>(null);
+	const [heartbeats, setHeartbeats] = useState<HeartbeatRunInfo[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 
@@ -25,6 +29,9 @@ export function MemoryPanel() {
 					cause instanceof Error ? cause.message : "Could not load memory.",
 				);
 			});
+		fetchHeartbeats()
+			.then(setHeartbeats)
+			.catch(() => setHeartbeats([]));
 	}, []);
 
 	useEffect(() => {
@@ -105,6 +112,28 @@ export function MemoryPanel() {
 						/>
 					))}
 				</ul>
+			</section>
+			<section
+				aria-labelledby="heartbeats-heading"
+				className="flex flex-col gap-3"
+			>
+				<h2
+					id="heartbeats-heading"
+					className="font-semibold text-sm tracking-tight"
+				>
+					Heartbeats
+				</h2>
+				{heartbeats.length === 0 ? (
+					<p className="text-muted-foreground text-sm">
+						No heartbeat has needed to run yet. Quiet is normal.
+					</p>
+				) : (
+					<ul className="flex flex-col gap-2">
+						{heartbeats.map((run) => (
+							<HeartbeatRow key={`${run.name}-${run.started_at}`} run={run} />
+						))}
+					</ul>
+				)}
 			</section>
 			<section
 				aria-labelledby="semantic-heading"

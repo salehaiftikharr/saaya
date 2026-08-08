@@ -39,3 +39,30 @@ class MemoryItem(Base):
         UUID(as_uuid=True), ForeignKey("memory_items.id"), default=None
     )
     version_introduced: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Thread(Base):
+    """Conversation registry: who was active when, and when reflection last
+    looked. The checkpointer owns message content; this row owns liveness."""
+
+    __tablename__ = "threads"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_reflected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+
+
+class HeartbeatRun(Base):
+    """One heartbeat execution: what ran, when, and what actually happened."""
+
+    __tablename__ = "heartbeat_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(64))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    outcome: Mapped[str] = mapped_column(String(32), default="running")
+    detail: Mapped[str] = mapped_column(Text, default="")

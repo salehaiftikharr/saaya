@@ -94,3 +94,28 @@ async def rollback(request: Request, body: RollbackRequest) -> ReflectResponse:
     entry = state.reflection_runner.ledger.rollback_to(body.version)
     state.rebuild_agent()
     return ReflectResponse(outcome="rolled-back", version=entry.version, violations=[])
+
+
+class HeartbeatRunInfo(BaseModel):
+    name: str
+    outcome: str
+    detail: str
+    started_at: str
+    finished_at: str | None
+
+
+@memory_router.get("/api/heartbeats")
+async def heartbeat_history(request: Request) -> list[HeartbeatRunInfo]:
+    from saaya.heartbeat.runner import recent_runs
+
+    runs = await recent_runs(request.app.state.heartbeat_engine)
+    return [
+        HeartbeatRunInfo(
+            name=run.name,
+            outcome=run.outcome,
+            detail=run.detail,
+            started_at=run.started_at.isoformat(),
+            finished_at=run.finished_at.isoformat() if run.finished_at else None,
+        )
+        for run in runs
+    ]

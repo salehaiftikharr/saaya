@@ -7,6 +7,7 @@ ever judges the proposal; validate.py rules decide alone.
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 from saaya.reflection.validate import PROTECTED_FILES, Violation, validate_change
@@ -56,11 +57,21 @@ class ReflectionRunner:
             self._protected_contents(),
         )
         if violations:
+            self._record_rejection(proposed, violations)
             return ReflectionResult("rejected", self._ledger.current_version(), violations)
 
         (self._memory_dir / TARGET_FILE).write_text(proposed, encoding="utf-8")
         entry = self._ledger.record(reason, [TARGET_FILE])
         return ReflectionResult("applied", entry.version, [])
+
+    def _record_rejection(self, proposed: str, violations: list[Violation]) -> None:
+        """A rejected proposal is evidence, not garbage: keep it inspectable
+        beside the versions, never inside the live memory files."""
+        rejected_dir = self._memory_dir / ".versions" / "rejected"
+        rejected_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%f")
+        header = "\n".join(f"# {v.rule}: {v.detail}" for v in violations)
+        (rejected_dir / f"{stamp}.md").write_text(f"{header}\n\n{proposed}", encoding="utf-8")
 
     @property
     def ledger(self) -> VersionLedger:

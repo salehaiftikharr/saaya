@@ -25,9 +25,10 @@ async def to_wire_events(
         if kind == "on_chat_model_stream":
             chunk = item.get("data", {}).get("chunk")
             text = getattr(chunk, "text", None)
-            # AIMessageChunk.text is a property on some versions, a method on
-            # others; tolerate both rather than pin the whole adapter to one.
-            if callable(text):
+            # AIMessageChunk.text is a str property on current langchain-core
+            # and a method on older ones; the isinstance check first avoids
+            # invoking the deprecated callable-str compatibility shim.
+            if not isinstance(text, str) and callable(text):
                 text = text()
             if isinstance(text, str) and text:
                 yield TextDelta(text=text)

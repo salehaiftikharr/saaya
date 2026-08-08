@@ -32,6 +32,9 @@ class Settings(BaseSettings):
 
     workspace_dir: Path = REPO_ROOT / "workspace"
 
+    heartbeat_interval_seconds: int = 300
+    heartbeat_quiet_seconds: int = 600
+
     chat_model: str = "anthropic:claude-sonnet-4-6"
     embedding_model: str = "openai:text-embedding-3-small"
 

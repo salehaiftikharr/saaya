@@ -46,3 +46,19 @@ export async function rollbackTo(version: number): Promise<void> {
 		throw new Error(`Rollback failed with status ${response.status}.`);
 	}
 }
+
+export interface HeartbeatRunInfo {
+	name: string;
+	outcome: string;
+	detail: string;
+	started_at: string;
+	finished_at: string | null;
+}
+
+export async function fetchHeartbeats(): Promise<HeartbeatRunInfo[]> {
+	const response = await fetch("/api/heartbeats");
+	if (!response.ok) {
+		throw new Error(`The server answered with status ${response.status}.`);
+	}
+	return (await response.json()) as HeartbeatRunInfo[];
+}

@@ -41,6 +41,7 @@ async def chat(request: Request, body: ChatRequest) -> StreamingResponse:
     thread_id = body.thread_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": thread_id}}
     payload = {"messages": [{"role": "user", "content": body.text}]}
+    await request.app.state.thread_activity.mark_active(thread_id)
 
     async def stream() -> AsyncIterator[str]:
         yield _sse(ThreadStarted(thread_id=thread_id))

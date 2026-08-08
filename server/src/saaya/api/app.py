@@ -14,6 +14,8 @@ from saaya.api.memory_routes import memory_router
 from saaya.api.routes import router
 from saaya.config import Settings, load_settings
 from saaya.db.engine import create_engine
+from saaya.heartbeat.activity import ThreadActivity
+from saaya.heartbeat.service import build_reflect_heartbeat, start_scheduler
 from saaya.memory.embedder import build_embedder
 from saaya.memory.store import SemanticMemoryStore
 
@@ -64,7 +66,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 resolved.workspace_dir / "memory", build_proposer(resolved)
             )
             app.state.rebuild_agent = rebuild_agent
-            yield
+            activity = ThreadActivity(engine)
+            app.state.thread_activity = activity
+            app.state.heartbeat_engine = engine
+            heartbeat = build_reflect_heartbeat(
+                app, engine, activity, resolved.heartbeat_quiet_seconds
+            )
+            scheduler = start_scheduler(heartbeat, resolved.heartbeat_interval_seconds)
+            try:
+                yield
+            finally:
+                scheduler.shutdown(wait=False)
         finally:
             await pool.close()
 
