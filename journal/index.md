@@ -49,6 +49,7 @@ factual, linked, and never created to inflate documentation.
 - [P-026: The application shell scroll model](progress/P-026-scroll-model.md)
 - [P-027: Titles, restored tool activity, dev-thread hygiene, mark verification](progress/P-027-continuation.md)
 - [P-028: Marketing pass 2, proof depth and trust](progress/P-028-proof-depth.md)
+- [P-029: Streaming behavior finished and the acceptance sweep](progress/P-029-item8-and-sweep.md)
 
 ## Decisions
 
