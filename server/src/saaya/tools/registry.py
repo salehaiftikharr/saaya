@@ -7,6 +7,7 @@ while the tool is active.
 import json
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import Connection, select
@@ -25,6 +26,8 @@ class ToolInfo:
     script: str
     status: str
     version: int
+    last_used_at: str | None = None
+    last_outcome: str | None = None
 
 
 class ToolRegistry:
@@ -154,6 +157,18 @@ class ToolRegistry:
     async def active_tools(self) -> list[ToolInfo]:
         return [tool for tool in await self.list_tools() if tool.status == "active"]
 
+    async def record_use(self, name: str, outcome: str) -> None:
+        def _update(sync_conn: Connection) -> None:
+            with Session(bind=sync_conn) as session:
+                tool = session.get(DynamicTool, name)
+                if tool is not None:
+                    tool.last_used_at = datetime.now(UTC)
+                    tool.last_outcome = outcome
+                    session.commit()
+
+        async with self._engine.connect() as connection:
+            await connection.run_sync(_update)
+
 
 def _info(tool: DynamicTool) -> ToolInfo:
     return ToolInfo(
@@ -163,4 +178,6 @@ def _info(tool: DynamicTool) -> ToolInfo:
         script=tool.script,
         status=tool.status,
         version=tool.version,
+        last_used_at=tool.last_used_at.isoformat() if tool.last_used_at else None,
+        last_outcome=tool.last_outcome,
     )

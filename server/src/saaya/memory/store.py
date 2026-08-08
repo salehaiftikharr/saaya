@@ -84,7 +84,7 @@ class SemanticMemoryStore:
     async def list_recent(self, *, limit: int = 50) -> list[RememberedItem]:
         statement = (
             select(MemoryItem)
-            .where(MemoryItem.superseded_by.is_(None))
+            .where(MemoryItem.superseded_by.is_(None), MemoryItem.forgotten_at.is_(None))
             .order_by(MemoryItem.learned_at.desc())
             .limit(limit)
         )
@@ -113,7 +113,7 @@ class SemanticMemoryStore:
         distance = MemoryItem.embedding.cosine_distance(vector)
         statement = (
             select(MemoryItem, distance.label("distance"))
-            .where(MemoryItem.superseded_by.is_(None))
+            .where(MemoryItem.superseded_by.is_(None), MemoryItem.forgotten_at.is_(None))
             .order_by(distance)
             .limit(limit)
         )
@@ -152,3 +152,46 @@ class SemanticMemoryStore:
 
         async with self._engine.connect() as connection:
             return await connection.run_sync(_query)
+
+    async def forget(self, item_id: str) -> bool:
+        """The item leaves recall and every future prompt; the row stays as a
+        private record."""
+
+        def _update(sync_conn: Connection) -> bool:
+            with Session(bind=sync_conn) as session:
+                item = session.get(MemoryItem, uuid.UUID(item_id))
+                if item is None:
+                    return False
+                item.forgotten_at = datetime.now(UTC)
+                session.commit()
+                return True
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_update)
+
+    async def supersede(self, item_id: str, new_text: str) -> RememberedItem | None:
+        """A correction: the new item takes over retrieval; the old row stays
+        linked to it as the audit trail."""
+        replacement = await self.remember(
+            text=new_text,
+            kind="fact",
+            why_retained="user correction",
+            source_thread_id=None,
+            source_kind="correction",
+        )
+
+        def _link(sync_conn: Connection) -> bool:
+            with Session(bind=sync_conn) as session:
+                old = session.get(MemoryItem, uuid.UUID(item_id))
+                if old is None:
+                    return False
+                old.superseded_by = uuid.UUID(replacement.id)
+                new = session.get(MemoryItem, uuid.UUID(replacement.id))
+                if new is not None:
+                    new.kind = old.kind
+                session.commit()
+                return True
+
+        async with self._engine.connect() as connection:
+            linked = await connection.run_sync(_link)
+        return replacement if linked else None

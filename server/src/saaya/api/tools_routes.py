@@ -13,6 +13,8 @@ class ToolView(BaseModel):
     script: str
     status: str
     version: int
+    last_used_at: str | None = None
+    last_outcome: str | None = None
 
 
 class RollbackBody(BaseModel):

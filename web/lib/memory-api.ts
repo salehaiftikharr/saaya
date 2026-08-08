@@ -62,3 +62,31 @@ export async function fetchHeartbeats(): Promise<HeartbeatRunInfo[]> {
 	}
 	return (await response.json()) as HeartbeatRunInfo[];
 }
+
+export async function forgetMemory(id: string): Promise<void> {
+	const response = await fetch(`/api/memory/items/${id}/forget`, {
+		method: "POST",
+	});
+	if (!response.ok) {
+		throw new Error(`Forget failed with status ${response.status}.`);
+	}
+}
+
+export async function supersedeMemory(id: string, text: string): Promise<void> {
+	const response = await fetch(`/api/memory/items/${id}/supersede`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ text }),
+	});
+	if (!response.ok) {
+		throw new Error(`Correction failed with status ${response.status}.`);
+	}
+}
+
+export async function fetchVersionContent(version: number): Promise<string> {
+	const response = await fetch(`/api/memory/versions/${version}/content`);
+	if (!response.ok) {
+		throw new Error(`No snapshot for version ${version}.`);
+	}
+	return ((await response.json()) as { content: string }).content;
+}

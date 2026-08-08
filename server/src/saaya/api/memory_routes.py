@@ -1,6 +1,6 @@
 """Memory and reflection API: inspect, run reflection, roll back."""
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from saaya.api.history import to_transcript
@@ -119,3 +119,34 @@ async def heartbeat_history(request: Request) -> list[HeartbeatRunInfo]:
         )
         for run in runs
     ]
+
+
+class SupersedeBody(BaseModel):
+    text: str
+
+
+@memory_router.post("/api/memory/items/{item_id}/forget")
+async def forget_memory(request: Request, item_id: str) -> dict[str, str]:
+    """The item stops appearing in recall and future context; the record
+    itself is kept privately."""
+    if not await request.app.state.memory_store.forget(item_id):
+        raise HTTPException(status_code=404, detail="unknown memory")
+    return {"status": "forgotten"}
+
+
+@memory_router.post("/api/memory/items/{item_id}/supersede")
+async def supersede_memory(request: Request, item_id: str, body: SupersedeBody) -> RememberedItem:
+    replacement = await request.app.state.memory_store.supersede(
+        item_id, " ".join(body.text.split())
+    )
+    if replacement is None:
+        raise HTTPException(status_code=404, detail="unknown memory")
+    return replacement
+
+
+@memory_router.get("/api/memory/versions/{version}/content")
+async def version_content(request: Request, version: int) -> dict[str, str]:
+    content = request.app.state.reflection_runner.ledger.file_at(version, "how-i-work.md")
+    if content is None:
+        raise HTTPException(status_code=404, detail="no snapshot for that version")
+    return {"content": content}

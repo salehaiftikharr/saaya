@@ -38,6 +38,7 @@ class MemoryItem(Base):
     superseded_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("memory_items.id"), default=None
     )
+    forgotten_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     version_introduced: Mapped[int] = mapped_column(Integer, default=0)
 
 
@@ -82,6 +83,8 @@ class DynamicTool(Base):
     script: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(16), default="draft")
     version: Mapped[int] = mapped_column(Integer, default=1)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    last_outcome: Mapped[str | None] = mapped_column(String(16), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -51,7 +51,10 @@ def build_dynamic_tools(active: list[ToolInfo], registry: ToolRegistry) -> list[
     for info in active:
         # Default-arg binding: each closure runs its own tool.
         async def call(_info: ToolInfo = info, **kwargs: Any) -> str:
-            return await run_tool_script(registry.script_path(_info.name), kwargs)
+            result = await run_tool_script(registry.script_path(_info.name), kwargs)
+            outcome = "failed" if result.startswith(("Tool failed", "Tool timed")) else "ok"
+            await registry.record_use(_info.name, outcome)
+            return result
 
         tools.append(
             StructuredTool.from_function(

@@ -6,9 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	fetchHeartbeats,
 	fetchMemoryOverview,
+	forgetMemory,
 	type HeartbeatRunInfo,
 	type MemoryOverview,
 	rollbackTo,
+	supersedeMemory,
 } from "@/lib/memory-api";
 import { HeartbeatRow } from "./heartbeat-row";
 import { ProceduralFileCard } from "./procedural-file";
@@ -42,6 +44,36 @@ export function MemoryPanel() {
 	useEffect(() => {
 		load();
 	}, [load]);
+
+	const handleForget = useCallback(
+		async (id: string) => {
+			try {
+				await forgetMemory(id);
+				load();
+				toast("Forgotten", {
+					description: "It no longer reaches recall or future context.",
+				});
+			} catch {
+				toast("Forget failed", { description: "Try again in a moment." });
+			}
+		},
+		[load],
+	);
+
+	const handleCorrect = useCallback(
+		async (id: string, text: string) => {
+			try {
+				await supersedeMemory(id, text);
+				load();
+				toast("Corrected", {
+					description: "The new wording takes over; the old stays on record.",
+				});
+			} catch {
+				toast("Correction failed", { description: "Try again in a moment." });
+			}
+		},
+		[load],
+	);
 
 	const handleRollback = useCallback(
 		async (version: number) => {
@@ -128,6 +160,10 @@ export function MemoryPanel() {
 				<h2 id="procedural-heading" className="type-eyebrow">
 					Working knowledge
 				</h2>
+				<p className="text-muted-foreground text-xs">
+					How Saaya works with you, kept as readable files it loads into every
+					conversation.
+				</p>
 				{overview.procedural.map((file) => (
 					<ProceduralFileCard key={file.name} file={file} />
 				))}
@@ -184,6 +220,10 @@ export function MemoryPanel() {
 				<h2 id="semantic-heading" className="type-eyebrow">
 					Remembered things
 				</h2>
+				<p className="text-muted-foreground text-xs">
+					Individual facts Saaya recalls when relevant. Correct or forget any of
+					them; nothing is silently erased.
+				</p>
 				{overview.semantic.length === 0 ? (
 					<p className="text-muted-foreground text-sm">
 						Nothing remembered yet. Tell Saaya something worth keeping.
@@ -191,7 +231,12 @@ export function MemoryPanel() {
 				) : (
 					<ul className="flex flex-col gap-2">
 						{overview.semantic.map((item) => (
-							<SemanticItemRow key={item.id} item={item} />
+							<SemanticItemRow
+								key={item.id}
+								item={item}
+								onForget={handleForget}
+								onCorrect={handleCorrect}
+							/>
 						))}
 					</ul>
 				)}

@@ -11,6 +11,8 @@ export interface ToolView {
 	script: string;
 	status: string;
 	version: number;
+	last_used_at?: string | null;
+	last_outcome?: string | null;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -70,6 +72,14 @@ export function ToolRow({
 				</span>
 			</div>
 			<p className="text-muted-foreground text-sm">{tool.description}</p>
+			<p className="text-muted-foreground text-xs">
+				{tool.status === "active"
+					? "Available in web, Slack, and MCP conversations."
+					: "Runs nowhere until approved."}
+				{tool.last_used_at
+					? ` Last used ${new Date(tool.last_used_at).toLocaleString()} (${tool.last_outcome ?? "ok"}).`
+					: " Not used yet."}
+			</p>
 			<details>
 				<summary className="cursor-pointer text-muted-foreground text-xs">
 					Read the script before approving

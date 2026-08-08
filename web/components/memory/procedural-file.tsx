@@ -13,6 +13,13 @@ export function ProceduralFileCard({ file }: { file: ProceduralFile }) {
 					</span>
 				)}
 			</header>
+			{file.protected && (
+				<p className="border-b px-3 py-2 text-muted-foreground text-xs">
+					This file defines who Saaya is. Reflection can never write it, and
+					validation proves it unchanged after every run; that is why there is
+					no edit control here.
+				</p>
+			)}
 			<pre className="overflow-x-auto whitespace-pre-wrap p-3 font-mono text-muted-foreground text-xs leading-relaxed">
 				{file.content}
 			</pre>

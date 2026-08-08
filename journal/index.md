@@ -50,6 +50,7 @@ factual, linked, and never created to inflate documentation.
 - [P-027: Titles, restored tool activity, dev-thread hygiene, mark verification](progress/P-027-continuation.md)
 - [P-028: Marketing pass 2, proof depth and trust](progress/P-028-proof-depth.md)
 - [P-029: Streaming behavior finished and the acceptance sweep](progress/P-029-item8-and-sweep.md)
+- [P-030: Memory agency, tool evidence, and the product-experience handoff](progress/P-030-agency-and-goal-handoff.md)
 
 ## Decisions
 
