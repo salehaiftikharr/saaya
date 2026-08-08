@@ -105,12 +105,12 @@ export function ChatApp() {
 							>
 								<SaayaMark className="size-14 text-foreground" />
 								<div className="max-w-sm text-center">
-									<h1 className="font-semibold text-lg tracking-tight">
+									<h1 className="type-display text-4xl">
 										Start a conversation
 									</h1>
-									<p className="mt-1 text-muted-foreground text-sm">
-										Saaya remembers this thread across restarts. Ask for the
-										time to watch a tool run.
+									<p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+										The coworker that stays. What you say here survives
+										restarts, and what Saaya learns carries forward.
 									</p>
 								</div>
 							</section>

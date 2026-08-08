@@ -42,7 +42,7 @@ export function ToolsPanel() {
 
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-4 py-6">
-			<h2 className="font-semibold text-sm tracking-tight">Tools</h2>
+			<h2 className="type-eyebrow">Tools</h2>
 			<p className="text-muted-foreground text-sm">
 				Capabilities Saaya proposed. Read a script, then approve it; approved
 				tools survive restarts and can be disabled any time.

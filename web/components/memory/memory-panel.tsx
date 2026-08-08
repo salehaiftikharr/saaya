@@ -81,10 +81,7 @@ export function MemoryPanel() {
 				aria-labelledby="procedural-heading"
 				className="flex flex-col gap-3"
 			>
-				<h2
-					id="procedural-heading"
-					className="font-semibold text-sm tracking-tight"
-				>
+				<h2 id="procedural-heading" className="type-eyebrow">
 					Working knowledge
 				</h2>
 				{overview.procedural.map((file) => (
@@ -95,10 +92,7 @@ export function MemoryPanel() {
 				aria-labelledby="versions-heading"
 				className="flex flex-col gap-3"
 			>
-				<h2
-					id="versions-heading"
-					className="font-semibold text-sm tracking-tight"
-				>
+				<h2 id="versions-heading" className="type-eyebrow">
 					Version history
 				</h2>
 				<ul className="flex flex-col gap-2">
@@ -117,10 +111,7 @@ export function MemoryPanel() {
 				aria-labelledby="heartbeats-heading"
 				className="flex flex-col gap-3"
 			>
-				<h2
-					id="heartbeats-heading"
-					className="font-semibold text-sm tracking-tight"
-				>
+				<h2 id="heartbeats-heading" className="type-eyebrow">
 					Heartbeats
 				</h2>
 				{heartbeats.length === 0 ? (
@@ -139,10 +130,7 @@ export function MemoryPanel() {
 				aria-labelledby="semantic-heading"
 				className="flex flex-col gap-3"
 			>
-				<h2
-					id="semantic-heading"
-					className="font-semibold text-sm tracking-tight"
-				>
+				<h2 id="semantic-heading" className="type-eyebrow">
 					Remembered things
 				</h2>
 				{overview.semantic.length === 0 ? (
