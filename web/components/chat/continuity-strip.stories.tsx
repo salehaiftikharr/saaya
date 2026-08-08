@@ -14,13 +14,13 @@ export const CarriedContext: Story = {
 		items: [
 			{
 				kind: "preference",
-				text: "Writes git commits in plain sentence case with no emojis.",
+				text: "Writes commit messages in plain sentence case with no emojis.",
 			},
 			{
 				kind: "constraint",
-				text: "Job-search help always checks visa sponsorship first.",
+				text: "Release notes go out before the version tag is pushed.",
 			},
-			{ kind: "entity", text: "Portfolio site is saleha.live." },
+			{ kind: "entity", text: "The team demo happens Thursday afternoons." },
 		],
 	},
 };

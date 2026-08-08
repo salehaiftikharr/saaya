@@ -12,8 +12,8 @@ import { SemanticItemRow } from "@/components/memory/semantic-item";
 import { VersionRow } from "@/components/memory/version-row";
 import { ToolRow } from "@/components/tools/tool-row";
 
-// Every fixture below is genuine product output from a development instance,
-// lightly trimmed. Nothing here is invented.
+// Fixtures mirror genuine product output: the shapes, states, and flows are
+// real, with personal details replaced by neutral stand-ins.
 const noop = () => {};
 
 export default function About() {
@@ -41,7 +41,7 @@ export default function About() {
 							message={{
 								id: "b2-u",
 								role: "user",
-								text: "Context for how we work together: I deploy my portfolio by pushing to main, it auto-deploys on Vercel.",
+								text: "Context for how we work together: merging to main deploys staging automatically, so never suggest manual deploy steps.",
 								activities: [],
 							}}
 						/>
@@ -49,7 +49,7 @@ export default function About() {
 							message={{
 								id: "b2-a",
 								role: "assistant",
-								text: "Got it, locked in. **Portfolio** - push to main = live. I will not suggest extra deployment steps; I will help you get the code right before you push.",
+								text: "Got it, locked in. **Deploys** - merge to main and staging is live. I will focus on getting the change ready to merge, not on deploy ceremony.",
 								activities: [],
 							}}
 						/>
@@ -94,13 +94,16 @@ export default function About() {
 						items={[
 							{
 								kind: "constraint",
-								text: "Saleha is a new grad on F-1 OPT; for any job search help, always check visa sponsorship availability first.",
+								text: "Release notes go out before the version tag is pushed, every time.",
 							},
 							{
 								kind: "fact",
-								text: "Saleha deploys her portfolio by pushing to main; it auto-deploys on Vercel.",
+								text: "Merging to main deploys staging automatically; no manual steps.",
 							},
-							{ kind: "entity", text: "Portfolio site is saleha.live." },
+							{
+								kind: "entity",
+								text: "The team demo happens Thursday afternoons.",
+							},
 						]}
 					/>
 				</DeviceFrame>
@@ -116,7 +119,7 @@ export default function About() {
 						item={{
 							id: "b5-1",
 							kind: "preference",
-							text: "Writes git commits in plain sentence case with no emojis.",
+							text: "Writes commit messages in plain sentence case with no emojis.",
 							confidence: 0.7,
 							reinforcement_count: 4,
 							learned_at: "2026-08-08T03:45:00Z",
@@ -126,7 +129,7 @@ export default function About() {
 						item={{
 							id: "b5-2",
 							kind: "preference",
-							text: "Considers Playwright tests mandatory before marking any work as done.",
+							text: "Considers a change unfinished until it has been exercised end to end.",
 							confidence: 0.7,
 							reinforcement_count: 1,
 							learned_at: "2026-08-08T04:04:00Z",
@@ -144,7 +147,7 @@ export default function About() {
 					<VersionRow
 						entry={{
 							version: 6,
-							reason: "heartbeat reflection over thread 898c85db",
+							reason: "heartbeat reflection over thread a7c41f02",
 							changed_files: ["how-i-work.md"],
 							recorded_at: "2026-08-08T08:00:00Z",
 						}}
@@ -176,7 +179,7 @@ export default function About() {
 						run={{
 							name: "reflect",
 							outcome: "completed",
-							detail: "898c85db: applied",
+							detail: "a7c41f02: applied",
 							started_at: "2026-08-08T08:00:00Z",
 							finished_at: "2026-08-08T08:00:02Z",
 						}}
@@ -185,7 +188,7 @@ export default function About() {
 						run={{
 							name: "reflect",
 							outcome: "completed",
-							detail: "abdabe72: skipped",
+							detail: "e3b95d11: skipped",
 							started_at: "2026-08-08T04:04:15Z",
 							finished_at: "2026-08-08T04:04:16Z",
 						}}

@@ -22,7 +22,7 @@ export const Preference: Story = {
 		item: {
 			id: "1",
 			kind: "preference",
-			text: "Writes git commits in plain sentence case with no emojis.",
+			text: "Writes commit messages in plain sentence case with no emojis.",
 			confidence: 0.7,
 			reinforcement_count: 3,
 			learned_at: "2026-08-08T03:52:00Z",
@@ -35,7 +35,7 @@ export const FreshFact: Story = {
 		item: {
 			id: "2",
 			kind: "fact",
-			text: "Portfolio site is saleha.live.",
+			text: "The team demo happens Thursday afternoons.",
 			confidence: 0.7,
 			reinforcement_count: 0,
 			learned_at: "2026-08-08T03:52:00Z",
