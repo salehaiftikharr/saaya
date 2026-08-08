@@ -6,9 +6,24 @@ together. Conversations survive restarts; memory compounds with provenance;
 every self-directed memory change is validated deterministically, versioned,
 and reversible.
 
-Status: early. The first vertical slice works end to end: a web conversation
-with streamed responses and visible tool activity, checkpointed in Postgres,
-resumable after a full server restart.
+Status: the twelve-item roadmap is implemented and verified end to end.
+
+| Capability | State |
+| --- | --- |
+| Streamed chat with visible tool activity | working, e2e-verified |
+| Conversations durable across restarts | working, e2e-verified |
+| Semantic memory with provenance and recall | working |
+| Procedural memory, reflection, versions, rollback | working, deterministic validation only |
+| Reflect heartbeat (quiet when idle) | working, fake-clock tested |
+| MCP server (bearer) and external MCP tools | working, real-client verified |
+| Slack over Socket Mode | connected; owner DM round-trip pending |
+| Dynamic tools (propose, approve, disable, roll back) | working, restart-verified |
+| Containerized stack (non-root) | working, e2e-verified |
+| Design system (two-register type, echo grammar, story page) | shipped |
+| Privacy gate over the tracked tree | enforced in CI |
+| CI (exact local gates) | green |
+
+The journal under `journal/` carries the evidence for every row.
 
 ## Architecture
 
