@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Composer } from "./composer";
+import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
 import { useChat } from "./use-chat";
 
 export function ChatApp() {
-	const { messages, status, loadError, send, newConversation } = useChat();
+	const { messages, status, loadError, continuity, send, newConversation } =
+		useChat();
 	const [view, setView] = useState<"chat" | "memory" | "tools">("chat");
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -121,6 +123,7 @@ export function ChatApp() {
 									aria-label="Conversation"
 									className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6"
 								>
+									<ContinuityStrip items={continuity} />
 									{messages.map((message, index) => (
 										<Message
 											key={message.id}

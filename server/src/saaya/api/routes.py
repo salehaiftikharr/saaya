@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from saaya import __version__
 from saaya.api.adapter import to_wire_events
 from saaya.api.events import ThreadStarted, TurnDone, TurnError, WireEvent
-from saaya.api.history import TranscriptMessage, to_transcript
+from saaya.api.history import TranscriptMessage, context_query, to_transcript
 
 router = APIRouter()
 
@@ -71,3 +71,23 @@ async def thread_messages(request: Request, thread_id: str) -> list[TranscriptMe
     agent = request.app.state.agent
     state = await agent.aget_state({"configurable": {"thread_id": thread_id}})
     return to_transcript(state.values.get("messages", []))
+
+
+class ContextItem(BaseModel):
+    kind: str
+    text: str
+
+
+@router.get("/api/chat/{thread_id}/context")
+async def thread_context(request: Request, thread_id: str) -> list[ContextItem]:
+    """What Saaya carries into a resumed conversation: the memories nearest
+    to where the conversation left off. Surfacing them reinforces them,
+    deliberately: shown context is used context."""
+    agent = request.app.state.agent
+    state = await agent.aget_state({"configurable": {"thread_id": thread_id}})
+    transcript = to_transcript(state.values.get("messages", []))
+    query = context_query(transcript)
+    if query is None:
+        return []
+    items = await request.app.state.memory_store.recall(query, limit=3)
+    return [ContextItem(kind=item.kind, text=item.text) for item in items]

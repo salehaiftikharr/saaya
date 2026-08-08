@@ -1,5 +1,5 @@
 import { CircleAlert } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { EchoTrail } from "./echo-trail";
 import { type ToolActivity, ToolActivityChip } from "./tool-activity";
 
 export interface ChatMessage {
@@ -37,14 +37,7 @@ export function Message({
 				</div>
 			)}
 			{waiting ? (
-				<div
-					role="status"
-					className="flex flex-col gap-2"
-					aria-label="Saaya is working"
-				>
-					<Skeleton className="h-4 w-3/5" />
-					<Skeleton className="h-4 w-2/5" />
-				</div>
+				<EchoTrail />
 			) : (
 				message.text !== "" && (
 					<p className="whitespace-pre-wrap text-sm leading-relaxed">

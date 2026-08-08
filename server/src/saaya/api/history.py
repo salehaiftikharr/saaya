@@ -49,3 +49,11 @@ def to_transcript(messages: list[Any]) -> list[TranscriptMessage]:
             if text:
                 transcript.append(TranscriptMessage(role="assistant", text=text))
     return transcript
+
+
+def context_query(transcript: list[TranscriptMessage]) -> str | None:
+    """The last thing the user said anchors what memory is relevant here."""
+    for message in reversed(transcript):
+        if message.role == "user" and message.text.strip():
+            return message.text
+    return None

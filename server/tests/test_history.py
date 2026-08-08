@@ -48,3 +48,23 @@ def test_callable_text_attribute_is_tolerated() -> None:
     message = FakeMessage("human")
     message.text = lambda: "from method"  # type: ignore[assignment]  (simulating older langchain-core)
     assert to_transcript([message])[0].text == "from method"
+
+
+def test_context_query_takes_the_last_user_message() -> None:
+    from saaya.api.history import context_query, to_transcript
+
+    transcript = to_transcript(
+        [
+            FakeMessage("human", text="first question"),
+            FakeMessage("ai", text="answer"),
+            FakeMessage("human", text="follow-up about deploys"),
+            FakeMessage("ai", text="deploy answer"),
+        ]
+    )
+    assert context_query(transcript) == "follow-up about deploys"
+
+
+def test_context_query_is_none_for_empty_threads() -> None:
+    from saaya.api.history import context_query
+
+    assert context_query([]) is None

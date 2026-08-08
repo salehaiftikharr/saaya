@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readWireEvents } from "@/lib/sse";
 import type { TranscriptMessage } from "@/lib/wire-events";
+import type { ContextItem } from "./continuity-strip";
 import type { ChatMessage } from "./message";
 
 const THREAD_KEY = "saaya.thread";
@@ -22,6 +23,7 @@ export function useChat() {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [status, setStatus] = useState<ChatStatus>("idle");
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const [continuity, setContinuity] = useState<ContextItem[]>([]);
 	const threadRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -33,6 +35,14 @@ export function useChat() {
 				if (!response.ok) throw new Error(`status ${response.status}`);
 				const transcript = (await response.json()) as TranscriptMessage[];
 				setMessages(fromTranscript(transcript));
+				if (transcript.length > 0) {
+					fetch(`/api/chat/${stored}/context`)
+						.then(async (contextResponse) => {
+							if (!contextResponse.ok) return;
+							setContinuity((await contextResponse.json()) as ContextItem[]);
+						})
+						.catch(() => {});
+				}
 			})
 			.catch(() => {
 				setLoadError("Could not load the earlier conversation.");
@@ -131,8 +141,9 @@ export function useChat() {
 		threadRef.current = null;
 		localStorage.removeItem(THREAD_KEY);
 		setMessages([]);
+		setContinuity([]);
 		setLoadError(null);
 	}, [status]);
 
-	return { messages, status, loadError, send, newConversation };
+	return { messages, status, loadError, continuity, send, newConversation };
 }
