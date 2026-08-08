@@ -1,0 +1,41 @@
+"""SQLAlchemy models. Schema changes here, then alembic autogenerate."""
+
+import uuid
+from datetime import datetime
+
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+EMBEDDING_DIMENSIONS = 1536
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class MemoryItem(Base):
+    """One remembered thing, with enough provenance to answer: what was
+    learned, where it came from, when, why retained, how confident, whether
+    reinforced or superseded, and which version introduced it."""
+
+    __tablename__ = "memory_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    kind: Mapped[str] = mapped_column(String(32))
+    text: Mapped[str] = mapped_column(Text)
+    why_retained: Mapped[str] = mapped_column(Text)
+    confidence: Mapped[float] = mapped_column(default=0.7)
+    embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSIONS))
+    source_kind: Mapped[str] = mapped_column(String(32))
+    source_thread_id: Mapped[str | None] = mapped_column(String(64), default=None)
+    learned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_reinforced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
+    reinforcement_count: Mapped[int] = mapped_column(Integer, default=0)
+    superseded_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("memory_items.id"), default=None
+    )
+    version_introduced: Mapped[int] = mapped_column(Integer, default=0)

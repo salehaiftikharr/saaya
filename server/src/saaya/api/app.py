@@ -12,6 +12,9 @@ from psycopg_pool import AsyncConnectionPool
 
 from saaya.api.routes import router
 from saaya.config import Settings, load_settings
+from saaya.db.engine import create_engine
+from saaya.memory.embedder import build_embedder
+from saaya.memory.store import SemanticMemoryStore
 
 
 def _export_langsmith_env(settings: Settings) -> None:
@@ -41,10 +44,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             saver = AsyncPostgresSaver(pool)
             await saver.setup()
+            engine = create_engine(resolved.database_url)
+            memory_store = SemanticMemoryStore(engine, build_embedder(resolved))
             # Imported here so hermetic API tests never import model providers.
             from saaya.agent.assembly import build_agent
 
-            app.state.agent = build_agent(resolved, saver)
+            app.state.agent = build_agent(resolved, saver, memory_store)
             app.state.settings = resolved
             yield
         finally:

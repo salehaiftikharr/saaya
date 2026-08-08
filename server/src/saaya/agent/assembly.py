@@ -11,6 +11,8 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from saaya.agent.tools import current_datetime
 from saaya.config import Settings
+from saaya.memory.store import SemanticMemoryStore
+from saaya.memory.tools import make_memory_tools
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 
@@ -19,7 +21,11 @@ def load_system_prompt() -> str:
     return (PROMPTS_DIR / "identity.md").read_text(encoding="utf-8")
 
 
-def build_agent(settings: Settings, checkpointer: BaseCheckpointSaver[Any]) -> Any:
+def build_agent(
+    settings: Settings,
+    checkpointer: BaseCheckpointSaver[Any],
+    memory_store: SemanticMemoryStore,
+) -> Any:
     """Compile the Saaya graph with durable checkpointing."""
     provider, _, model_name = settings.chat_model.partition(":")
     model = init_chat_model(
@@ -29,7 +35,7 @@ def build_agent(settings: Settings, checkpointer: BaseCheckpointSaver[Any]) -> A
     )
     return create_deep_agent(  # pyright: ignore[reportUnknownVariableType]
         model=model,
-        tools=[current_datetime],
+        tools=[current_datetime, *make_memory_tools(memory_store)],
         system_prompt=load_system_prompt(),
         checkpointer=checkpointer,
     )
