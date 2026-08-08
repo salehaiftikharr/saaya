@@ -39,6 +39,8 @@ export function useChat() {
 	const [threads, setThreads] = useState<ThreadInfo[]>([]);
 	const [activeThread, setActiveThread] = useState<string | null>(null);
 	const threadRef = useRef<string | null>(null);
+	const abortRef = useRef<AbortController | null>(null);
+	const lastSentRef = useRef<string | null>(null);
 
 	const refreshThreads = useCallback(() => {
 		fetchThreads()
@@ -94,6 +96,9 @@ export function useChat() {
 			if (status === "working") return;
 			setStatus("working");
 			setLoadError(null);
+			lastSentRef.current = text;
+			const controller = new AbortController();
+			abortRef.current = controller;
 			setMessages((current) => [
 				...current,
 				{ id: crypto.randomUUID(), role: "user", text, activities: [] },
@@ -112,6 +117,7 @@ export function useChat() {
 						text,
 						thread_id: threadRef.current ?? undefined,
 					}),
+					signal: controller.signal,
 				});
 				if (!response.ok || !response.body) {
 					throw new Error(
@@ -155,19 +161,38 @@ export function useChat() {
 					}
 				}
 			} catch (error) {
-				const message =
-					error instanceof Error ? error.message : "The request failed.";
-				updateLast((m) => ({ ...m, error: message }));
-				toast("Connection interrupted", {
-					description: "The turn ended early; send again to continue.",
-				});
+				if (controller.signal.aborted) {
+					updateLast((m) => ({
+						...m,
+						error: "Stopped. The reply ends here; send again to continue.",
+					}));
+				} else {
+					const message =
+						error instanceof Error ? error.message : "The request failed.";
+					updateLast((m) => ({ ...m, error: message }));
+					toast("Connection interrupted", {
+						description: "The turn ended early; retry when ready.",
+					});
+				}
 			} finally {
+				abortRef.current = null;
 				setStatus("idle");
 				refreshThreads();
 			}
 		},
 		[status, updateLast, refreshThreads],
 	);
+
+	const stop = useCallback(() => {
+		abortRef.current?.abort();
+	}, []);
+
+	const retry = useCallback(() => {
+		const text = lastSentRef.current;
+		if (!text || status === "working") return;
+		// The failed exchange stays visible above; the retry is a new attempt.
+		void send(text);
+	}, [send, status]);
 
 	const newConversation = useCallback(() => {
 		if (status === "working") return;
@@ -233,5 +258,7 @@ export function useChat() {
 		switchThread,
 		rename,
 		archive,
+		stop,
+		retry,
 	};
 }

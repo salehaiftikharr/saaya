@@ -1,5 +1,6 @@
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, RotateCcw } from "lucide-react";
 import { Streamdown } from "streamdown";
+import { Button } from "@/components/ui/button";
 import { EchoTrail } from "./echo-trail";
 import { type ToolActivity, ToolActivityChip } from "./tool-activity";
 
@@ -14,9 +15,11 @@ export interface ChatMessage {
 export function Message({
 	message,
 	streaming = false,
+	onRetry,
 }: {
 	message: ChatMessage;
 	streaming?: boolean;
+	onRetry?: () => void;
 }) {
 	if (message.role === "user") {
 		return (
@@ -48,10 +51,23 @@ export function Message({
 				)
 			)}
 			{message.error && (
-				<p className="flex items-center gap-1.5 text-destructive text-sm">
-					<CircleAlert aria-hidden className="size-4 shrink-0" />
-					{message.error}
-				</p>
+				<div className="flex flex-wrap items-center gap-2">
+					<p className="flex items-center gap-1.5 text-destructive text-sm">
+						<CircleAlert aria-hidden className="size-4 shrink-0" />
+						{message.error}
+					</p>
+					{onRetry && (
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-7 gap-1.5"
+							onClick={onRetry}
+						>
+							<RotateCcw className="size-3" />
+							Try again
+						</Button>
+					)}
+				</div>
 			)}
 		</div>
 	);

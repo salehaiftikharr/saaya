@@ -1,6 +1,12 @@
 "use client";
 
-import { Brain, History, MessageSquarePlus, Wrench } from "lucide-react";
+import {
+	ArrowDown,
+	Brain,
+	History,
+	MessageSquarePlus,
+	Wrench,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { EchoMark } from "@/components/brand/echo-mark";
 import { SaayaMark } from "@/components/brand/saaya-mark";
@@ -37,14 +43,43 @@ export function ChatApp() {
 		switchThread,
 		rename,
 		archive,
+		stop,
+		retry,
 	} = useChat();
 	const [view, setView] = useState<"chat" | "memory" | "tools">("chat");
+	const [nearBottom, setNearBottom] = useState(true);
 	const bottomRef = useRef<HTMLDivElement | null>(null);
+	const scrollHostRef = useRef<HTMLDivElement | null>(null);
 
+	const viewport = () =>
+		scrollHostRef.current?.querySelector<HTMLElement>(
+			'[data-slot="scroll-area-viewport"]',
+		) ?? null;
+
+	// Readers who scroll up stay where they are; only near-bottom readers
+	// follow the stream.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: scroll reacts to transcript growth, not to the sentinel's identity
 	useEffect(() => {
+		if (nearBottom) bottomRef.current?.scrollIntoView({ block: "end" });
+	}, [messages, nearBottom]);
+
+	useEffect(() => {
+		const host = viewport();
+		if (!host) return;
+		const onScroll = () => {
+			setNearBottom(
+				host.scrollHeight - host.scrollTop - host.clientHeight < 120,
+			);
+		};
+		onScroll();
+		host.addEventListener("scroll", onScroll, { passive: true });
+		return () => host.removeEventListener("scroll", onScroll);
+	});
+
+	const jumpToLatest = () => {
 		bottomRef.current?.scrollIntoView({ block: "end" });
-	}, [messages]);
+		setNearBottom(true);
+	};
 
 	const working = status === "working";
 	const lastMessage = messages[messages.length - 1];
@@ -264,25 +299,48 @@ export function ChatApp() {
 								</fieldset>
 							</section>
 						) : (
-							<ScrollArea className="min-h-0 flex-1">
-								<div
-									role="log"
-									aria-label="Conversation"
-									className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6"
-								>
-									<ContinuityStrip items={continuity} />
-									{messages.map((message, index) => (
-										<Message
-											key={message.id}
-											message={message}
-											streaming={working && index === messages.length - 1}
-										/>
-									))}
-									<div ref={bottomRef} />
-								</div>
-							</ScrollArea>
+							<div ref={scrollHostRef} className="relative min-h-0 flex-1">
+								{!nearBottom && (
+									<Button
+										variant="secondary"
+										size="sm"
+										onClick={jumpToLatest}
+										className="-translate-x-1/2 absolute bottom-3 left-1/2 z-10 gap-1.5 shadow-sm"
+									>
+										<ArrowDown className="size-3.5" />
+										Jump to latest
+									</Button>
+								)}
+								<ScrollArea className="h-full min-h-0">
+									<div
+										role="log"
+										aria-label="Conversation"
+										className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6"
+									>
+										<ContinuityStrip items={continuity} />
+										{messages.map((message, index) => (
+											<Message
+												key={message.id}
+												message={message}
+												streaming={working && index === messages.length - 1}
+												onRetry={
+													message.error && index === messages.length - 1
+														? retry
+														: undefined
+												}
+											/>
+										))}
+										<div ref={bottomRef} />
+									</div>
+								</ScrollArea>
+							</div>
 						)}
-						<Composer disabled={working} onSend={send} />
+						<Composer
+							disabled={working}
+							working={working}
+							onSend={send}
+							onStop={stop}
+						/>
 					</>
 				)}
 			</main>

@@ -152,3 +152,29 @@ test.describe("application shell scroll model", () => {
 		).toBeInViewport();
 	});
 });
+
+test("jump to latest appears when scrolled away and returns the reader", async ({
+	page,
+}) => {
+	await openApp(page);
+	await page.evaluate(() => {
+		const viewport = document.querySelector(
+			'[data-slot="scroll-area-viewport"]',
+		);
+		viewport?.scrollTo({ top: 0 });
+	});
+	const jump = page.getByRole("button", { name: "Jump to latest" });
+	await expect(jump).toBeVisible();
+	await jump.click();
+	await expect(jump).toBeHidden();
+	const nearBottom = await page.evaluate(() => {
+		const viewport = document.querySelector(
+			'[data-slot="scroll-area-viewport"]',
+		);
+		if (!viewport) return false;
+		return (
+			viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 140
+		);
+	});
+	expect(nearBottom).toBe(true);
+});
