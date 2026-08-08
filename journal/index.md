@@ -28,6 +28,7 @@ factual, linked, and never created to inflate documentation.
 - [P-005: The reflect heartbeat](progress/P-005-heartbeat.md)
 - [P-006: MCP server and external MCP consumption](progress/P-006-mcp.md)
 - [P-007: Slack channel over Socket Mode](progress/P-007-slack.md)
+- [P-008: Containerized full stack](progress/P-008-deployment.md)
 
 ## Decisions
 

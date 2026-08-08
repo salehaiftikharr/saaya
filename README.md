@@ -38,6 +38,12 @@ cd web && pnpm install && pnpm dev
 
 Open http://localhost:3000. Ask Saaya what time it is to watch a tool run.
 
+To run the whole product as containers instead (server, web, and postgres):
+
+```console
+docker compose --profile full up --build
+```
+
 ## Verification gates
 
 ```console

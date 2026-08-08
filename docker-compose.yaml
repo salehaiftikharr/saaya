@@ -1,7 +1,32 @@
-# Local development services. The server and web apps run on the host during
-# development; Postgres is the only required container. Host port 5433 avoids
-# colliding with any existing local Postgres on 5432.
+# Development runs only postgres (host port 5433 avoids a local 5432
+# collision); `--profile full` also builds and runs the server and web
+# containers as the deployable stack.
 services:
+  server:
+    profiles: ["full"]
+    build: ./server
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgresql://saaya:saaya@postgres:5432/saaya
+    volumes:
+      - ./workspace:/app/workspace
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    profiles: ["full"]
+    build:
+      context: ./web
+      args:
+        SAAYA_API_URL: http://server:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
   postgres:
     image: pgvector/pgvector:pg17
     environment:
