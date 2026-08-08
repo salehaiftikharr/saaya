@@ -10,7 +10,7 @@
 		"build-storybook": "storybook build",
 		"lint": "biome check .",
 		"format": "biome check --write .",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "next typegen && tsc --noEmit",
 		"test": "vitest run --passWithNoTests",
 		"test:storybook": "vitest --project storybook run --passWithNoTests"
 	},
