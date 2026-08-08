@@ -30,8 +30,10 @@ e2e ring passes against the real stack and skips hermetically otherwise.
 
 ## Owner decisions still open
 
-- Slack inbound: DM @saaya once to exercise the round-trip; add users:read
-  only if Saaya should ever DM first.
+- Slack inbound: VERIFIED live after the owner enabled the app_mention and
+  message.im event subscriptions (scopes alone deliver nothing); a channel
+  mention produced a threaded reply and registered its own slack-namespaced
+  thread. Remaining choice: add users:read only if Saaya should DM first.
 - Git history: personal terms remain in pushed history on the private repo.
   Before any public release, choose filter-repo rewrite (needs approved
   force-push) or a fresh squashed init.

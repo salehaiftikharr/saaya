@@ -26,7 +26,7 @@ acceptance criteria and verification gates pass.
 - [x] 7. Safe memory reflection and versioning (P-003, P-004)
 - [x] 8. One useful heartbeat (P-005)
 - [x] 9. MCP server and external MCP consumption (P-006)
-- [x] 10. Slack channel (P-007; owner DM round-trip pending, see entry)
+- [x] 10. Slack channel (P-007; inbound round-trip verified live, P-023 note)
 - [x] 11. Dynamic or reusable tool creation (P-009)
 - [x] 12. Deployment and operational hardening (P-008, P-010)
 

@@ -16,7 +16,7 @@ Status: the twelve-item roadmap is implemented and verified end to end.
 | Procedural memory, reflection, versions, rollback | working, deterministic validation only |
 | Reflect heartbeat (quiet when idle) | working, fake-clock tested |
 | MCP server (bearer) and external MCP tools | working, real-client verified |
-| Slack over Socket Mode | connected; owner DM round-trip pending |
+| Slack over Socket Mode | working, round-trip verified |
 | Dynamic tools (propose, approve, disable, roll back) | working, restart-verified |
 | Containerized stack (non-root) | working, e2e-verified |
 | Design system (two-register type, echo grammar, story page) | shipped |
