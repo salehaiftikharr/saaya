@@ -43,6 +43,7 @@ factual, linked, and never created to inflate documentation.
 - [P-020: Composition variety and the mark rationale](progress/P-020-composition.md)
 - [P-021: Connection status, the live e2e ring, and the social asset](progress/P-021-status-e2e-social.md)
 - [P-022: Final verification matrix and honest gate exits](progress/P-022-matrix-and-gates.md)
+- [P-023: Handoff, the session in full](progress/P-023-handoff.md)
 
 ## Decisions
 
