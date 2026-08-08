@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, MessageSquarePlus, Wrench } from "lucide-react";
+import { Brain, MessageSquare, MessageSquarePlus, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaayaMark } from "@/components/brand/saaya-mark";
 import { MemoryPanel } from "@/components/memory/memory-panel";
@@ -9,14 +9,24 @@ import { ToolsPanel } from "@/components/tools/tools-panel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { relativeTime } from "@/lib/threads-api";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
 import { useChat } from "./use-chat";
 
 export function ChatApp() {
-	const { messages, status, loadError, continuity, send, newConversation } =
-		useChat();
+	const {
+		messages,
+		status,
+		loadError,
+		continuity,
+		threads,
+		activeThread,
+		send,
+		newConversation,
+		switchThread,
+	} = useChat();
 	const [view, setView] = useState<"chat" | "memory" | "tools">("chat");
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -67,16 +77,42 @@ export function ChatApp() {
 						Tools
 					</Button>
 				</div>
-				<div className="mt-auto flex flex-col gap-2 px-4 pb-4">
-					<p className="text-muted-foreground text-xs">
-						Conversations survive restarts. Close this tab and come back; Saaya
-						picks up where you left off.
-					</p>
+				{threads.length > 0 && (
+					<nav
+						aria-label="Conversations"
+						className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pt-2"
+					>
+						<p className="type-eyebrow px-1 pb-1">Conversations</p>
+						{threads.map((thread) => (
+							<Button
+								key={thread.id}
+								variant={thread.id === activeThread ? "secondary" : "ghost"}
+								size="sm"
+								className="justify-start gap-2 font-normal"
+								aria-current={thread.id === activeThread ? "true" : undefined}
+								disabled={working}
+								onClick={() => {
+									setView("chat");
+									switchThread(thread.id);
+								}}
+							>
+								<MessageSquare className="size-3.5 shrink-0 text-muted-foreground" />
+								<span className="truncate">
+									{relativeTime(thread.last_activity_at)}
+								</span>
+							</Button>
+						))}
+					</nav>
+				)}
+				<div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-3">
+					<span className="truncate text-muted-foreground text-xs">
+						Everything here survives restarts.
+					</span>
 					<a
 						href="/about"
-						className="text-muted-foreground text-xs underline-offset-4 hover:text-foreground hover:underline"
+						className="shrink-0 text-muted-foreground text-xs underline-offset-4 hover:text-foreground hover:underline"
 					>
-						What Saaya is
+						About
 					</a>
 				</div>
 			</aside>
@@ -148,10 +184,10 @@ export function ChatApp() {
 						)}
 						{messages.length === 0 ? (
 							<section
-								className="flex flex-1 flex-col items-center justify-center gap-4 p-8"
+								className="flex flex-1 flex-col items-center justify-center gap-5 p-8"
 								aria-label="Empty conversation"
 							>
-								<SaayaMark className="size-14 text-foreground" />
+								<SaayaMark className="size-12 text-foreground" />
 								<div className="max-w-sm text-center">
 									<h1 className="type-display text-4xl">
 										Start a conversation
@@ -160,6 +196,28 @@ export function ChatApp() {
 										The coworker that stays. What you say here survives
 										restarts, and what Saaya learns carries forward.
 									</p>
+								</div>
+								<div
+									role="group"
+									className="flex flex-wrap justify-center gap-2"
+									aria-label="Suggestions"
+								>
+									{[
+										"What time is it right now?",
+										"Remember that our team demo is on Thursdays.",
+										"What do you remember about how I work?",
+									].map((suggestion) => (
+										<Button
+											key={suggestion}
+											variant="outline"
+											size="sm"
+											className="font-normal"
+											disabled={working}
+											onClick={() => send(suggestion)}
+										>
+											{suggestion}
+										</Button>
+									))}
 								</div>
 							</section>
 						) : (

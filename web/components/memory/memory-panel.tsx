@@ -116,7 +116,7 @@ export function MemoryPanel() {
 					</span>
 					<span className="text-muted-foreground text-xs">
 						{lastHeartbeat
-							? heartbeats.length + " runs recorded"
+							? `${heartbeats.length} runs recorded`
 							: "nothing has needed attention"}
 					</span>
 				</div>

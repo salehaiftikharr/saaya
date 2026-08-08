@@ -84,3 +84,17 @@ async def test_new_activity_makes_a_thread_worthy_again(
     clock.advance(601)
     await heartbeat.tick()
     assert reflected == [thread_id, thread_id]
+
+
+async def test_recent_web_threads_excludes_channel_namespaces(
+    engine: AsyncEngine, clock: FakeClock
+) -> None:
+    activity = ThreadActivity(engine, clock=clock)
+    web_id = uuid.uuid4().hex
+    await activity.mark_active(web_id)
+    await activity.mark_active("slack:D42")
+    await activity.mark_active(f"mcp-{uuid.uuid4()}")
+    rows = await activity.recent_web_threads(limit=10)
+    ids = [thread_id for thread_id, _ in rows]
+    assert web_id in ids
+    assert all(":" not in i and not i.startswith("mcp-") for i in ids)

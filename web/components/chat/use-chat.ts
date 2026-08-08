@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { readWireEvents } from "@/lib/sse";
+import { fetchThreads, type ThreadInfo } from "@/lib/threads-api";
 import type { TranscriptMessage } from "@/lib/wire-events";
 import type { ContextItem } from "./continuity-strip";
 import type { ChatMessage } from "./message";
@@ -25,19 +26,29 @@ export function useChat() {
 	const [status, setStatus] = useState<ChatStatus>("idle");
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [continuity, setContinuity] = useState<ContextItem[]>([]);
+	const [threads, setThreads] = useState<ThreadInfo[]>([]);
+	const [activeThread, setActiveThread] = useState<string | null>(null);
 	const threadRef = useRef<string | null>(null);
 
-	useEffect(() => {
-		const stored = localStorage.getItem(THREAD_KEY);
-		if (!stored) return;
-		threadRef.current = stored;
-		fetch(`/api/chat/${stored}/messages`)
+	const refreshThreads = useCallback(() => {
+		fetchThreads()
+			.then(setThreads)
+			.catch(() => setThreads([]));
+	}, []);
+
+	const loadThread = useCallback((threadId: string) => {
+		threadRef.current = threadId;
+		setActiveThread(threadId);
+		localStorage.setItem(THREAD_KEY, threadId);
+		setLoadError(null);
+		setContinuity([]);
+		fetch(`/api/chat/${threadId}/messages`)
 			.then(async (response) => {
 				if (!response.ok) throw new Error(`status ${response.status}`);
 				const transcript = (await response.json()) as TranscriptMessage[];
 				setMessages(fromTranscript(transcript));
 				if (transcript.length > 0) {
-					fetch(`/api/chat/${stored}/context`)
+					fetch(`/api/chat/${threadId}/context`)
 						.then(async (contextResponse) => {
 							if (!contextResponse.ok) return;
 							setContinuity((await contextResponse.json()) as ContextItem[]);
@@ -49,6 +60,12 @@ export function useChat() {
 				setLoadError("Could not load the earlier conversation.");
 			});
 	}, []);
+
+	useEffect(() => {
+		refreshThreads();
+		const stored = localStorage.getItem(THREAD_KEY);
+		if (stored) loadThread(stored);
+	}, [refreshThreads, loadThread]);
 
 	const updateLast = useCallback(
 		(update: (message: ChatMessage) => ChatMessage) => {
@@ -94,6 +111,7 @@ export function useChat() {
 				for await (const event of readWireEvents(response.body)) {
 					if (event.event === "thread.started") {
 						threadRef.current = event.thread_id;
+						setActiveThread(event.thread_id);
 						localStorage.setItem(THREAD_KEY, event.thread_id);
 					} else if (event.event === "text.delta") {
 						updateLast((m) => ({ ...m, text: m.text + event.text }));
@@ -135,19 +153,39 @@ export function useChat() {
 				});
 			} finally {
 				setStatus("idle");
+				refreshThreads();
 			}
 		},
-		[status, updateLast],
+		[status, updateLast, refreshThreads],
 	);
 
 	const newConversation = useCallback(() => {
 		if (status === "working") return;
 		threadRef.current = null;
+		setActiveThread(null);
 		localStorage.removeItem(THREAD_KEY);
 		setMessages([]);
 		setContinuity([]);
 		setLoadError(null);
 	}, [status]);
 
-	return { messages, status, loadError, continuity, send, newConversation };
+	const switchThread = useCallback(
+		(threadId: string) => {
+			if (status === "working" || threadId === threadRef.current) return;
+			loadThread(threadId);
+		},
+		[status, loadThread],
+	);
+
+	return {
+		messages,
+		status,
+		loadError,
+		continuity,
+		threads,
+		activeThread,
+		send,
+		newConversation,
+		switchThread,
+	};
 }

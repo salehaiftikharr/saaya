@@ -79,3 +79,22 @@ class ThreadActivity:
 
         async with self._engine.connect() as connection:
             await connection.run_sync(_update)
+
+    async def recent_web_threads(self, *, limit: int) -> list[tuple[str, datetime]]:
+        """Bare-uuid ids are the web surface; every other namespace carries a
+        prefix (slack:, mcp-, sched:)."""
+
+        def _query(sync_conn: Connection) -> list[tuple[str, datetime]]:
+            with Session(bind=sync_conn) as session:
+                rows = session.execute(
+                    select(Thread).order_by(Thread.last_activity_at.desc())
+                ).scalars()
+                web = [
+                    (row.id, row.last_activity_at)
+                    for row in rows
+                    if ":" not in row.id and not row.id.startswith(("mcp-", "test-"))
+                ]
+                return web[:limit]
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_query)

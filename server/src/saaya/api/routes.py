@@ -91,3 +91,16 @@ async def thread_context(request: Request, thread_id: str) -> list[ContextItem]:
         return []
     items = await request.app.state.memory_store.recall(query, limit=3)
     return [ContextItem(kind=item.kind, text=item.text) for item in items]
+
+
+class ThreadInfo(BaseModel):
+    id: str
+    last_activity_at: str
+
+
+@router.get("/api/threads")
+async def list_threads(request: Request, limit: int = 20) -> list[ThreadInfo]:
+    """Web conversations, newest activity first. Channel-owned threads
+    (slack:, mcp-, sched:) stay in their own surfaces."""
+    rows = await request.app.state.thread_activity.recent_web_threads(limit=limit)
+    return [ThreadInfo(id=thread_id, last_activity_at=at.isoformat()) for thread_id, at in rows]
