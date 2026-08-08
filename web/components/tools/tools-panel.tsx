@@ -22,6 +22,28 @@ export function ToolsPanel() {
 		load();
 	}, [load]);
 
+	const rollback = useCallback(
+		async (name: string, version: number) => {
+			setBusy(true);
+			setError(null);
+			try {
+				const response = await fetch(`/api/tools/${name}/rollback`, {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ version }),
+				});
+				if (!response.ok) throw new Error(`status ${response.status}`);
+				load();
+				toast(`${name} rolled back to version ${version}`);
+			} catch {
+				setError(`Could not roll back ${name}.`);
+			} finally {
+				setBusy(false);
+			}
+		},
+		[load],
+	);
+
 	const act = useCallback(
 		async (name: string, action: "activate" | "disable") => {
 			setBusy(true);
@@ -72,6 +94,7 @@ export function ToolsPanel() {
 							disabled={busy}
 							onActivate={(name) => act(name, "activate")}
 							onDisable={(name) => act(name, "disable")}
+							onRollback={rollback}
 						/>
 					))}
 				</ul>

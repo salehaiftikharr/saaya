@@ -1,6 +1,17 @@
 "use client";
 
-import { Play, Square } from "lucide-react";
+import { Play, Square, Undo2 } from "lucide-react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -26,11 +37,13 @@ export function ToolRow({
 	disabled,
 	onActivate,
 	onDisable,
+	onRollback,
 }: {
 	tool: ToolView;
 	disabled: boolean;
 	onActivate: (name: string) => void;
 	onDisable: (name: string) => void;
+	onRollback?: (name: string, version: number) => void;
 }) {
 	return (
 		<li className="flex flex-col gap-2 rounded-lg border bg-card p-3">
@@ -45,7 +58,45 @@ export function ToolRow({
 					{tool.status}
 				</span>
 				<span className="text-muted-foreground text-xs">v{tool.version}</span>
-				<span className="ml-auto">
+				<span className="ml-auto flex items-center gap-1">
+					{onRollback && tool.version > 1 && (
+						<AlertDialog>
+							<AlertDialogTrigger
+								render={
+									<Button
+										variant="ghost"
+										size="sm"
+										className="gap-1.5"
+										disabled={disabled}
+									>
+										<Undo2 className="size-3.5" />
+										Roll back
+									</Button>
+								}
+							/>
+							<AlertDialogContent>
+								<AlertDialogHeader>
+									<AlertDialogTitle>
+										Roll {tool.name} back to version {tool.version - 1}?
+									</AlertDialogTitle>
+									<AlertDialogDescription>
+										The script returns to the previous version and the rollback
+										is recorded as a new version, so nothing is erased. If the
+										tool is active, conversations use the older script
+										immediately.
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel>Keep this version</AlertDialogCancel>
+									<AlertDialogAction
+										onClick={() => onRollback(tool.name, tool.version - 1)}
+									>
+										Roll back
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+					)}
 					{tool.status === "active" ? (
 						<Button
 							variant="ghost"

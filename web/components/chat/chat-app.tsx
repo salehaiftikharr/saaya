@@ -33,6 +33,7 @@ import {
 	useAllJobs,
 	Workbench,
 } from "@/components/work/workbench";
+import { useHealth } from "@/lib/use-health";
 import { cn } from "@/lib/utils";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
@@ -63,6 +64,8 @@ export function ChatApp() {
 	const [nearBottom, setNearBottom] = useState(true);
 	const bottomRef = useRef<HTMLDivElement | null>(null);
 	const scrollHostRef = useRef<HTMLDivElement | null>(null);
+
+	const health = useHealth();
 
 	// The workbench opens when the conversation owns work and reveals itself
 	// when work starts mid-thread; a close wins until the thread changes.
@@ -126,17 +129,19 @@ export function ChatApp() {
 	const hasLiveJob = threadJobs.some((job) =>
 		["planning", "running", "retrying"].includes(job.state),
 	);
-	// Streaming turns win the mark; otherwise the conversation's job
-	// activity speaks: waiting beats working, working beats idle.
-	const echoState = working
-		? lastMessage?.activities.some((a) => a.state === "running")
-			? ("tool" as const)
-			: ("thinking" as const)
-		: hasWaitingJob
-			? ("waiting-approval" as const)
-			: hasLiveJob
-				? ("working" as const)
-				: ("idle" as const);
+	// An unreachable server outranks everything; then streaming turns; then
+	// the conversation's job activity: waiting beats working beats idle.
+	const echoState = health.offline
+		? ("offline" as const)
+		: working
+			? lastMessage?.activities.some((a) => a.state === "running")
+				? ("tool" as const)
+				: ("thinking" as const)
+			: hasWaitingJob
+				? ("waiting-approval" as const)
+				: hasLiveJob
+					? ("working" as const)
+					: ("idle" as const);
 
 	return (
 		<div className="flex h-dvh w-full overflow-hidden">
@@ -201,7 +206,9 @@ export function ChatApp() {
 					onRestored={refreshThreads}
 				/>
 				<div className="flex shrink-0 items-center justify-between gap-2 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-					<SurfaceStatus />
+					<SurfaceStatus
+						snapshot={health.offline ? "offline" : (health.surfaces ?? {})}
+					/>
 					<a
 						href="/about"
 						className="shrink-0 text-muted-foreground text-xs underline-offset-4 hover:text-foreground hover:underline"

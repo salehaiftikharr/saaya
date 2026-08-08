@@ -19,13 +19,14 @@ function dotClass(value: string | undefined): string {
 }
 
 /* Quiet truth about the doors: one dot per surface, red only when the
-   server itself cannot be reached. A static snapshot disables polling so
-   stories stay hermetic. */
+   server itself cannot be reached. When a snapshot prop is provided (the
+   shell's shared health hook, or a story fixture) it is the source of
+   truth on every render and no polling happens here. */
 export function SurfaceStatus({ snapshot }: { snapshot?: Snapshot }) {
-	const [surfaces, setSurfaces] = useState<Record<string, string> | null>(
-		typeof snapshot === "object" ? snapshot : null,
-	);
-	const [offline, setOffline] = useState(snapshot === "offline");
+	const [own, setOwn] = useState<{
+		surfaces: Record<string, string> | null;
+		offline: boolean;
+	}>({ surfaces: null, offline: false });
 
 	useEffect(() => {
 		if (snapshot !== undefined) return;
@@ -34,12 +35,11 @@ export function SurfaceStatus({ snapshot }: { snapshot?: Snapshot }) {
 			fetchHealth()
 				.then((health) => {
 					if (cancelled) return;
-					setSurfaces(health.surfaces);
-					setOffline(false);
+					setOwn({ surfaces: health.surfaces, offline: false });
 				})
 				.catch(() => {
 					if (cancelled) return;
-					setOffline(true);
+					setOwn((current) => ({ ...current, offline: true }));
 				});
 		};
 		poll();
@@ -50,15 +50,26 @@ export function SurfaceStatus({ snapshot }: { snapshot?: Snapshot }) {
 		};
 	}, [snapshot]);
 
+	const offline = snapshot !== undefined ? snapshot === "offline" : own.offline;
+	const surfaces =
+		snapshot !== undefined
+			? snapshot === "offline"
+				? null
+				: snapshot
+			: own.surfaces;
+
 	if (offline) {
 		return (
-			<span className="flex items-center gap-1.5 text-destructive text-xs">
+			<span
+				role="status"
+				className="flex items-center gap-1.5 text-destructive text-xs"
+			>
 				<span aria-hidden className="size-1.5 rounded-full bg-destructive" />
 				Reconnecting
 			</span>
 		);
 	}
-	if (!surfaces) {
+	if (!surfaces || Object.keys(surfaces).length === 0) {
 		return (
 			<span
 				role="status"

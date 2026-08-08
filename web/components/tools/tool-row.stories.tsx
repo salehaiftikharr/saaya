@@ -37,3 +37,10 @@ export const Active: Story = {
 export const Disabled: Story = {
 	args: { tool: { ...tool, status: "disabled" } },
 };
+
+export const WithRollback: Story = {
+	args: {
+		tool: { ...tool, status: "active", version: 3 },
+		onRollback: () => {},
+	},
+};

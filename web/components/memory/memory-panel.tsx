@@ -182,6 +182,11 @@ export function MemoryPanel() {
 							entry={entry}
 							current={entry.version === currentVersion}
 							disabled={busy}
+							currentContent={
+								overview.procedural.find((file) =>
+									file.name.includes("how-i-work"),
+								)?.content
+							}
 							onRollback={handleRollback}
 						/>
 					))}
