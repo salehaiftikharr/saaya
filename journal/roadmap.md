@@ -25,7 +25,7 @@ acceptance criteria and verification gates pass.
 - [x] 6. Semantic and procedural memory (P-003, P-004)
 - [x] 7. Safe memory reflection and versioning (P-003, P-004)
 - [x] 8. One useful heartbeat (P-005)
-- [ ] 9. MCP server and external MCP consumption
+- [x] 9. MCP server and external MCP consumption (P-006)
 - [ ] 10. Slack channel
 - [ ] 11. Dynamic or reusable tool creation
 - [ ] 12. Deployment and operational hardening

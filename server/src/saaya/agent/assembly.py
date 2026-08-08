@@ -1,5 +1,6 @@
 """Builds the Saaya deep agent. Assembly only; behavior lives in prompts/ and tools."""
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,7 @@ def build_agent(
     settings: Settings,
     checkpointer: BaseCheckpointSaver[Any],
     memory_store: SemanticMemoryStore,
+    external_tools: Sequence[Any] = (),
 ) -> Any:
     """Compile the Saaya graph with durable checkpointing."""
     provider, _, model_name = settings.chat_model.partition(":")
@@ -43,7 +45,7 @@ def build_agent(
     )
     return create_deep_agent(  # pyright: ignore[reportUnknownVariableType]
         model=model,
-        tools=[current_datetime, *make_memory_tools(memory_store)],
+        tools=[current_datetime, *make_memory_tools(memory_store), *external_tools],
         system_prompt=load_system_prompt(settings),
         checkpointer=checkpointer,
     )

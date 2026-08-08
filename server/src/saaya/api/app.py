@@ -16,6 +16,7 @@ from saaya.config import Settings, load_settings
 from saaya.db.engine import create_engine
 from saaya.heartbeat.activity import ThreadActivity
 from saaya.heartbeat.service import build_reflect_heartbeat, start_scheduler
+from saaya.mcp.server import build_mcp_app
 from saaya.memory.embedder import build_embedder
 from saaya.memory.store import SemanticMemoryStore
 
@@ -51,13 +52,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             memory_store = SemanticMemoryStore(engine, build_embedder(resolved))
             # Imported here so hermetic API tests never import model providers.
             from saaya.agent.assembly import build_agent
+            from saaya.mcp.consumption import load_external_tools
             from saaya.reflection.proposer import build_proposer
             from saaya.reflection.runner import ReflectionRunner
+
+            external_tools = await load_external_tools(resolved.workspace_dir / "mcp-servers.json")
 
             def rebuild_agent() -> None:
                 # Procedural memory rides the compiled system prompt, so an
                 # applied reflection or rollback rebuilds the graph.
-                app.state.agent = build_agent(resolved, saver, memory_store)
+                app.state.agent = build_agent(resolved, saver, memory_store, external_tools)
 
             rebuild_agent()
             app.state.settings = resolved
@@ -74,13 +78,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             scheduler = start_scheduler(heartbeat, resolved.heartbeat_interval_seconds)
             try:
-                yield
+                if mcp_app is not None:
+                    async with mcp_app.router.lifespan_context(mcp_app):
+                        yield
+                else:
+                    yield
             finally:
                 scheduler.shutdown(wait=False)
         finally:
             await pool.close()
 
+    # Built outside the lifespan so the mount exists before startup; the
+    # lifespan above runs its session manager only when a token enables it.
+    mcp_app = None
+    if resolved.mcp_token != "":
+        from saaya.memory.embedder import build_embedder as _embedder
+        from saaya.memory.store import SemanticMemoryStore as _Store
+
+        mcp_engine = create_engine(resolved.database_url)
+        mcp_app = build_mcp_app(
+            token=resolved.mcp_token,
+            public_url=resolved.public_url,
+            memory_store=_Store(mcp_engine, _embedder(resolved)),
+            get_agent=lambda: app.state.agent,
+        )
+
     app = FastAPI(title="saaya", lifespan=lifespan)
     app.include_router(router)
     app.include_router(memory_router)
+    if mcp_app is not None:
+        app.mount("/mcp", mcp_app)
     return app

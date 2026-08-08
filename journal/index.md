@@ -26,6 +26,7 @@ factual, linked, and never created to inflate documentation.
 - [P-003: Semantic memory, procedural memory, and reflection](progress/P-003-memory-and-reflection.md)
 - [P-004: Memory panel in the web app](progress/P-004-memory-ui.md)
 - [P-005: The reflect heartbeat](progress/P-005-heartbeat.md)
+- [P-006: MCP server and external MCP consumption](progress/P-006-mcp.md)
 
 ## Decisions
 

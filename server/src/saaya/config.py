@@ -32,6 +32,9 @@ class Settings(BaseSettings):
 
     workspace_dir: Path = REPO_ROOT / "workspace"
 
+    mcp_token: str = ""
+    public_url: str = "http://localhost:8000"
+
     heartbeat_interval_seconds: int = 300
     heartbeat_quiet_seconds: int = 600
 
