@@ -15,6 +15,7 @@ export function ToolActivityChip({ activity }: { activity: ToolActivity }) {
 			className={cn(
 				"inline-flex items-center gap-1.5 rounded-md border bg-card px-2 py-0.5",
 				"font-mono text-muted-foreground text-xs",
+				activity.state === "running" && "border-primary/40 text-foreground",
 			)}
 		>
 			{activity.state === "running" ? (

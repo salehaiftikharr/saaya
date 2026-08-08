@@ -4,6 +4,7 @@ import { Brain, MessageSquare, MessageSquarePlus, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { SaayaMark } from "@/components/brand/saaya-mark";
 import { MemoryPanel } from "@/components/memory/memory-panel";
+import { SurfaceStatus } from "@/components/shell/surface-status";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { ToolsPanel } from "@/components/tools/tools-panel";
 import { Button } from "@/components/ui/button";
@@ -105,9 +106,7 @@ export function ChatApp() {
 					</nav>
 				)}
 				<div className="mt-auto flex items-center justify-between gap-2 border-t px-4 py-3">
-					<span className="truncate text-muted-foreground text-xs">
-						Everything here survives restarts.
-					</span>
+					<SurfaceStatus />
 					<a
 						href="/about"
 						className="shrink-0 text-muted-foreground text-xs underline-offset-4 hover:text-foreground hover:underline"

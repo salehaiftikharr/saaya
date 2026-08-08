@@ -88,5 +88,7 @@ everywhere.
   second accent.
 - The mark and wordmark are the only custom vectors in the product; product
   icons come from Lucide.
-- Social preview: render `saaya-wordmark` centered on the background token at
-  1200x630. A committed PNG is pending and tracked in the journal.
+- Social preview: `saaya-social.png` (1200x630), the mark with its echo
+  shadow beside the lowercase wordmark and tagline on the paper token. The
+  app serves it as `web/app/opengraph-image.png` (the Next convention wires
+  the OpenGraph tags); regenerate both together.

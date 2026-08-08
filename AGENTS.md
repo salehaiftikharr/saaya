@@ -68,7 +68,10 @@ docs.
 - Hermetic by default: no network, no keys, no real time. pytest on the
   server; Vitest plus Storybook interaction tests on the web app.
 - Live-model tests are a separate ring behind `SAAYA_LIVE=1` and load keys
-  only from `.env.local`.
+  only from `.env.local`. The browser end-to-end spec (`web/e2e/`,
+  `pnpm test:e2e`) belongs to that ring: it drives the real running app and
+  model, and skips itself entirely when `SAAYA_LIVE` is unset, so default
+  and CI runs never touch it.
 - New behavior ships with its tests in the same commit.
 - Heartbeats and schedules are testable with an injected clock.
 - Critical user flows carry Playwright end-to-end coverage.
