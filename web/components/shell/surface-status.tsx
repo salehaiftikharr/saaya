@@ -57,6 +57,7 @@ export function SurfaceStatus({ snapshot }: { snapshot?: Snapshot }) {
 	if (!surfaces) {
 		return (
 			<span
+				role="status"
 				className="text-muted-foreground text-xs"
 				aria-label="Checking status"
 			>
@@ -65,7 +66,11 @@ export function SurfaceStatus({ snapshot }: { snapshot?: Snapshot }) {
 		);
 	}
 	return (
-		<span className="flex items-center gap-2" aria-label="Surface status">
+		<span
+			role="status"
+			className="flex items-center gap-2"
+			aria-label="Surface status"
+		>
 			{Object.entries(surfaces).map(([name, value]) => (
 				<span
 					key={name}
