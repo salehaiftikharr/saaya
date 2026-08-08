@@ -82,16 +82,54 @@ export function ChatApp() {
 			</aside>
 			<main className="flex h-dvh flex-1 flex-col">
 				<header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-					<span className="text-muted-foreground text-sm" aria-live="polite">
-						{view === "memory"
-							? "Memory"
-							: view === "tools"
-								? "Tools"
-								: working
-									? "Working"
-									: "Ready"}
-					</span>
-					<ThemeToggle />
+					<div className="flex items-center gap-2.5">
+						<SaayaMark className="size-5 md:hidden" />
+						<span className="text-muted-foreground text-sm" aria-live="polite">
+							{view === "memory"
+								? "Memory"
+								: view === "tools"
+									? "Tools"
+									: working
+										? "Working"
+										: "Ready"}
+						</span>
+					</div>
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="md:hidden"
+							aria-label="New conversation"
+							onClick={() => {
+								setView("chat");
+								newConversation();
+							}}
+							disabled={working || messages.length === 0}
+						>
+							<MessageSquarePlus className="size-4" />
+						</Button>
+						<Button
+							variant={view === "memory" ? "secondary" : "ghost"}
+							size="icon"
+							className="md:hidden"
+							aria-label="Memory"
+							aria-pressed={view === "memory"}
+							onClick={() => setView(view === "memory" ? "chat" : "memory")}
+						>
+							<Brain className="size-4" />
+						</Button>
+						<Button
+							variant={view === "tools" ? "secondary" : "ghost"}
+							size="icon"
+							className="md:hidden"
+							aria-label="Tools"
+							aria-pressed={view === "tools"}
+							onClick={() => setView(view === "tools" ? "chat" : "tools")}
+						>
+							<Wrench className="size-4" />
+						</Button>
+						<ThemeToggle />
+					</div>
 				</header>
 				{view === "memory" ? (
 					<div className="flex-1 overflow-y-auto">

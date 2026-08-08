@@ -126,3 +126,16 @@ class TestLedger:
         ledger.record("baseline", ["how-i-work.md"])
         assert ledger.file_at(1, "how-i-work.md") == HOW
         assert ledger.file_at(9, "how-i-work.md") is None
+
+
+class TestStructurePreservation:
+    def test_prose_that_drops_headings_is_rejected(self) -> None:
+        before, after = _no_protected_change()
+        prose = "The reversed text of probe2 is 2eborP.\n\nSKIP\n"
+        result = validate_change("how-i-work.md", HOW, prose, before, after)
+        assert any(v.rule == "structure" for v in result)
+
+    def test_keeping_headings_passes(self) -> None:
+        before, after = _no_protected_change()
+        result = validate_change("how-i-work.md", HOW, HOW + "- new bullet\n", before, after)
+        assert not any(v.rule == "structure" for v in result)

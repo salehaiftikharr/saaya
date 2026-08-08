@@ -88,7 +88,7 @@ export function MemoryPanel() {
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 py-6">
 			<section
 				aria-label="Memory at a glance"
-				className="grid grid-cols-3 gap-3"
+				className="grid grid-cols-1 gap-3 sm:grid-cols-3"
 			>
 				<div className="flex flex-col gap-1 rounded-lg border bg-card p-3">
 					<span className="type-eyebrow">Remembered</span>

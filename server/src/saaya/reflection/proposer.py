@@ -39,7 +39,9 @@ def build_proposer(settings: Settings) -> Proposer:
         # .text is a str-subclass accessor in langchain-core 1.x; plain str()
         # takes the property path without touching the deprecated call shim.
         cleaned = str(response.text).strip()
-        if cleaned == "SKIP" or cleaned == "":
+        # A SKIP anywhere on its own line is a skip, even when the model
+        # wrapped it in commentary.
+        if cleaned == "" or "SKIP" in {line.strip() for line in cleaned.splitlines()}:
             return None
         return cleaned + "\n" if not cleaned.endswith("\n") else cleaned
 

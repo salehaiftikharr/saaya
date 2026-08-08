@@ -71,6 +71,14 @@ def validate_change(
     if after.count("```") % 2 != 0:
         violations.append(Violation("markdown-fences", "unbalanced code fences"))
 
+    # The reflection contract says keep the structure; a proposal that loses
+    # the file's headings is prose, not the file.
+    before_headings = {line for line in before.splitlines() if line.startswith("#")}
+    after_lines = set(after.splitlines())
+    missing = sorted(h for h in before_headings if h not in after_lines)
+    if missing:
+        violations.append(Violation("structure", f"missing headings: {', '.join(missing[:3])}"))
+
     for pattern in CREDENTIAL_PATTERNS:
         match = pattern.search(after)
         if match:

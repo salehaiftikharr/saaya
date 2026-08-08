@@ -36,6 +36,7 @@ factual, linked, and never created to inflate documentation.
 - [P-013: Design elevation 3, outcomes first](progress/P-013-outcome-rows.md)
 - [P-014: Design elevation 4, motion with purpose](progress/P-014-motion.md)
 - [P-015: Design elevation 5, the continuity narrative](progress/P-015-about-page.md)
+- [P-016: Design elevation 6, the verification matrix](progress/P-016-verification-matrix.md)
 
 ## Decisions
 
