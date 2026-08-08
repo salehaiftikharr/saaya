@@ -60,9 +60,6 @@ test.describe("application shell scroll model", () => {
 		expect(doc.scrollHeight).toBeLessThanOrEqual(doc.clientHeight + 1);
 
 		const sidebar = page.locator('nav[aria-label="Conversations"]');
-		const transcript = page.locator(
-			'[role="log"][aria-label="Conversation"] >> xpath=ancestor::div[contains(@class,"overflow")][1]',
-		);
 
 		const before = await page.evaluate(() => {
 			const nav = document.querySelector('nav[aria-label="Conversations"]');
