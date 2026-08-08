@@ -2,6 +2,7 @@
 
 import { Brain, History, MessageSquarePlus, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { EchoMark } from "@/components/brand/echo-mark";
 import { SaayaMark } from "@/components/brand/saaya-mark";
 import { MemoryPanel } from "@/components/memory/memory-panel";
 import { SurfaceStatus } from "@/components/shell/surface-status";
@@ -55,12 +56,17 @@ export function ChatApp() {
 	const activeTitle =
 		threads.find((t) => t.id === activeThread)?.title ??
 		(messages.length > 0 ? "Conversation" : "New conversation");
+	const echoState = working
+		? lastMessage?.activities.some((a) => a.state === "running")
+			? ("tool" as const)
+			: ("thinking" as const)
+		: ("idle" as const);
 
 	return (
 		<div className="flex min-h-dvh w-full">
 			<aside className="hidden w-64 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
 				<div className="flex h-14 items-center gap-2.5 px-4">
-					<SaayaMark className="size-5" />
+					<EchoMark state={echoState} className="size-5" />
 					<span className="font-semibold text-sm tracking-tight">saaya</span>
 				</div>
 				<Separator />

@@ -8,12 +8,14 @@ export function Beat({
 	title,
 	copy,
 	variant = "center",
+	id,
 	children,
 }: {
 	eyebrow: string;
 	title: string;
 	copy: string;
 	variant?: "center" | "split" | "split-reverse" | "band";
+	id?: string;
 	children?: ReactNode;
 }) {
 	const header = (
@@ -34,6 +36,7 @@ export function Beat({
 	if (variant === "split" || variant === "split-reverse") {
 		return (
 			<section
+				id={id}
 				aria-label={title}
 				className={cn(
 					"grid items-center gap-8 py-14 md:grid-cols-2",
@@ -48,6 +51,7 @@ export function Beat({
 	if (variant === "band") {
 		return (
 			<section
+				id={id}
 				aria-label={title}
 				className="-mx-4 flex flex-col gap-6 rounded-xl bg-accent/40 px-6 py-12 sm:-mx-8 sm:px-10"
 			>
@@ -57,7 +61,7 @@ export function Beat({
 		);
 	}
 	return (
-		<section aria-label={title} className="flex flex-col gap-6 py-14">
+		<section id={id} aria-label={title} className="flex flex-col gap-6 py-14">
 			{header}
 			{children && <div className="mx-auto w-full max-w-2xl">{children}</div>}
 		</section>

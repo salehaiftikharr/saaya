@@ -208,3 +208,132 @@
 		}
 	}
 }
+
+/* The echo motion system: the mark's shadow behaves by state. Original
+   shadow physics, never a mascot. Documented in brand/MOTION.md. All
+   motion is decorative; reduced-motion renders the settled state, and a
+   hidden tab pauses everything. */
+@keyframes echo-idle {
+	0%,
+	100% {
+		transform: translate(0, 0);
+	}
+	50% {
+		transform: translate(0.4px, 0.4px);
+	}
+}
+@keyframes echo-thinking {
+	0%,
+	100% {
+		transform: translate(0, 0);
+	}
+	33% {
+		transform: translate(1.6px, -0.6px);
+	}
+	66% {
+		transform: translate(-0.9px, 1.2px);
+	}
+}
+@keyframes echo-tool {
+	0%,
+	100% {
+		transform: translate(0, 0) scale(1);
+	}
+	50% {
+		transform: translate(2.2px, 2.2px) scale(1.06, 0.97);
+	}
+}
+@keyframes echo-heartbeat {
+	0%,
+	100% {
+		transform: translate(0, 0);
+	}
+	18% {
+		transform: translate(2.6px, 2.6px);
+	}
+	36% {
+		transform: translate(0.4px, 0.4px);
+	}
+	54% {
+		transform: translate(2px, 2px);
+	}
+	72% {
+		transform: translate(0, 0);
+	}
+}
+@keyframes echo-success {
+	0% {
+		transform: translate(0, 0);
+	}
+	45% {
+		transform: translate(-9px, -9px);
+	}
+	70% {
+		transform: translate(-9px, -9px);
+	}
+	100% {
+		transform: translate(0, 0);
+	}
+}
+@keyframes echo-reconnecting {
+	0%,
+	100% {
+		transform: translate(0, 0);
+	}
+	50% {
+		transform: translate(-5px, -5px);
+	}
+}
+@keyframes body-listening {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.025);
+	}
+}
+@layer components {
+	.echo-part {
+		transform-origin: center;
+		will-change: transform;
+	}
+	.echo-state-idle .echo-part {
+		animation: echo-idle 6s ease-in-out infinite;
+	}
+	.echo-state-listening .echo-body {
+		animation: body-listening 2.4s ease-in-out infinite;
+	}
+	.echo-state-thinking .echo-part {
+		animation: echo-thinking 1.8s ease-in-out infinite;
+	}
+	.echo-state-tool .echo-part {
+		animation: echo-tool 1.2s ease-in-out infinite;
+	}
+	.echo-state-remembering .echo-part {
+		animation: echo-success 1.4s ease-out 1;
+	}
+	.echo-state-heartbeat .echo-part {
+		animation: echo-heartbeat 1.6s ease-in-out 1;
+	}
+	.echo-state-success .echo-part {
+		animation: echo-success 1.1s ease-out 1;
+	}
+	.echo-state-reconnecting .echo-part {
+		animation: echo-reconnecting 1s ease-in-out infinite;
+	}
+	.echo-state-failure .echo-part {
+		animation: none;
+		opacity: 0.45;
+	}
+	[data-tab-hidden] .echo-part {
+		animation-play-state: paused;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		/* Same specificity as every state rule, declared later, so it wins
+		   by cascade order without important. */
+		[class*="echo-state-"] .echo-part {
+			animation: none;
+		}
+	}
+}

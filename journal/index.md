@@ -45,6 +45,7 @@ factual, linked, and never created to inflate documentation.
 - [P-022: Final verification matrix and honest gate exits](progress/P-022-matrix-and-gates.md)
 - [P-023: Handoff, the session in full](progress/P-023-handoff.md)
 - [P-024: Conversation identity, history, and the live header](progress/P-024-conversation-identity.md)
+- [P-025: Marketing pass 1, the frame and the living mark](progress/P-025-marketing-frame.md)
 
 ## Decisions
 
@@ -55,6 +56,7 @@ factual, linked, and never created to inflate documentation.
 
 - [Phantom study and design plan](../docs/design/phantom-study-and-plan.md)
 - [Application refinement audit](../docs/design/app-refinement-audit.md)
+- [Marketing completeness comparison](../docs/design/marketing-comparison.md)
 
 ## Roadmap
 
