@@ -62,10 +62,13 @@ def evaluate(argv: list[str]) -> Verdict:
 
 def scrubbed_env(workspace: Path) -> dict[str, str]:
     """Nothing inherited: provider keys and tokens in the server process are
-    structurally invisible to commands."""
+    structurally invisible to commands. HOME points at a dot-directory so
+    runtime cache noise stays out of the job's visible files."""
+    home = workspace / ".home"
+    home.mkdir(exist_ok=True)
     return {
         "PATH": "/usr/bin:/bin",
-        "HOME": str(workspace),
+        "HOME": str(home),
         "LANG": "C.UTF-8",
     }
 

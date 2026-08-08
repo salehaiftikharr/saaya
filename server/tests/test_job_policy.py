@@ -196,3 +196,35 @@ async def test_start_job_tool_links_the_thread(engine: AsyncEngine) -> None:
     jobs = await store.list_jobs()
     assert jobs[0].thread_id == "web-thread-9"
     assert jobs[0].state == states.QUEUED
+
+
+async def test_read_artifact_is_thread_scoped(engine: AsyncEngine, tmp_path: Path) -> None:
+    from saaya.jobs.tools import make_read_artifact_tool
+
+    store = JobStore(engine)
+    approvals = ApprovalStore(engine)
+    job = await store.create(goal="artifact scope", thread_id="web-owner")
+    ws = job_workspace(tmp_path, job.workspace)
+    (ws / "report.md").write_text("# Private findings\n")
+    artifact = await approvals.create_artifact(
+        job.id,
+        path="report.md",
+        kind="report",
+        title="Findings",
+        content_type="text/markdown",
+        size=19,
+        event_seq=1,
+    )
+    tool = make_read_artifact_tool(store, approvals, tmp_path)
+
+    owner = await tool.ainvoke(  # type: ignore[attr-defined]
+        {"artifact_id": artifact.id},
+        config={"configurable": {"thread_id": "web-owner"}},
+    )
+    assert "Private findings" in owner
+
+    stranger = await tool.ainvoke(  # type: ignore[attr-defined]
+        {"artifact_id": artifact.id},
+        config={"configurable": {"thread_id": "web-other"}},
+    )
+    assert "does not belong" in stranger

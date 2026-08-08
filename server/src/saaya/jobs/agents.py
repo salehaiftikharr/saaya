@@ -61,6 +61,23 @@ def build_executor(settings: Settings, store: JobStore, approvals: ApprovalStore
     model = init_chat_model(model_name, model_provider=provider, api_key=settings.claude_api_key)
 
     async def execute(step: PlanStep, workspace: Path, job: JobView) -> str:
+        # A step that re-runs after an approval decision must know it: the
+        # fresh invocation would otherwise see finished files and skip the
+        # gated command the owner just approved.
+        notes = ""
+        cleared: list[str] = []
+        for a in await approvals.for_job(job.id):
+            if a.decision != "approved" or a.consumed_at is not None:
+                continue
+            argv = a.payload.get("argv", [])
+            items = cast("list[object]", argv) if isinstance(argv, list) else []
+            parts = [str(item) for item in items]
+            cleared.append(f"`{' '.join(parts)}`")
+        if cleared:
+            notes = (
+                "\n\nThe owner has APPROVED these previously gated commands; "
+                "run them now with run_command before finishing the step: " + ", ".join(cleared)
+            )
         agent = create_deep_agent(  # pyright: ignore[reportUnknownVariableType]
             model=model,
             tools=build_job_tools(workspace, store, approvals, job.id),
@@ -71,7 +88,7 @@ def build_executor(settings: Settings, store: JobStore, approvals: ApprovalStore
             ),
         )
         result = await agent.ainvoke(  # pyright: ignore[reportUnknownMemberType]
-            {"messages": [{"role": "user", "content": "Execute the step now."}]},
+            {"messages": [{"role": "user", "content": f"Execute the step now.{notes}"}]},
             config={"recursion_limit": 40},
         )
         messages = result.get("messages", [])

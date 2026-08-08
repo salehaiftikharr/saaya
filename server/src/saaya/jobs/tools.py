@@ -194,11 +194,17 @@ def make_start_job_tool(store: JobStore) -> BaseTool:
         coroutine=start_job,
         name="start_job",
         description=(
-            "Start a durable background job with its own workspace, plan, "
-            "and progress ledger. Use ONLY when the user explicitly asks "
-            "for background or long-running work, or explicitly agrees to "
-            "it. Never for questions or quick tasks. goal: a complete, "
-            "self-contained description of the outcome."
+            "Start a durable background job with its own isolated "
+            "workspace, plan, and progress ledger. Jobs survive restarts. "
+            "Inside a job, write-class commands (like git init or git add) "
+            "automatically pause the job in waiting_approval until the "
+            "owner approves them in the Work panel, then the job resumes "
+            "and really runs them; describe this correctly if asked. Use "
+            "ONLY when the user explicitly asks for background or "
+            "long-running work, or explicitly agrees to it. Never for "
+            "questions or quick tasks. goal: a complete, self-contained "
+            "description of the outcome; the job cannot see other jobs' "
+            "workspaces or this chat."
         ),
     )
 
@@ -225,7 +231,7 @@ def make_check_jobs_tool(store: JobStore, approvals: ApprovalStore) -> BaseTool:
             if job.error:
                 line += f" | error: {job.error[:80]}"
             if arts:
-                line += " | artifacts: " + ", ".join(a.title for a in arts)
+                line += " | artifacts: " + ", ".join(f"{a.title} (id {a.id})" for a in arts)
             lines.append(line)
         return "\n".join(lines)
 
@@ -235,6 +241,44 @@ def make_check_jobs_tool(store: JobStore, approvals: ApprovalStore) -> BaseTool:
         description=(
             "Check the state, latest events, errors, and artifacts of this "
             "conversation's background jobs. Use when the user asks about "
-            "job progress or wants to work with a job's results."
+            "job progress or wants to work with a job's results. Read an "
+            "artifact's content with read_job_artifact and its id."
+        ),
+    )
+
+
+def make_read_artifact_tool(
+    store: JobStore, approvals: ApprovalStore, workspace_root: Path
+) -> BaseTool:
+    """Chat-side read access to job artifacts, scoped to the conversation:
+    an artifact is readable only if its job belongs to this thread, so one
+    conversation can never read another's work."""
+    from langchain_core.runnables import RunnableConfig
+
+    from saaya.jobs.workspace import job_workspace
+
+    async def read_job_artifact(artifact_id: str, config: RunnableConfig) -> str:
+        configurable = config.get("configurable", {})
+        thread_id = str(configurable.get("thread_id", "")) or None
+        artifact = await approvals.get_artifact(artifact_id)
+        if artifact is None:
+            return "No such artifact."
+        job = await store.get(artifact.job_id)
+        if job is None or thread_id is None or job.thread_id != thread_id:
+            return "That artifact does not belong to this conversation."
+        workspace = job_workspace(workspace_root, job.workspace)
+        try:
+            content = await asyncio.to_thread(guarded_read, workspace, artifact.path)
+        except WorkspaceViolation as error:
+            return f"Refused: {error}"
+        return content[:12_000]
+
+    return StructuredTool.from_function(
+        coroutine=read_job_artifact,
+        name="read_job_artifact",
+        description=(
+            "Read the content of one of this conversation's job artifacts "
+            "by its id (from check_jobs). Use it to summarize or build on "
+            "a job's results."
         ),
     )

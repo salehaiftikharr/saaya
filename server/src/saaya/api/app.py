@@ -65,12 +65,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
             from saaya.jobs.store import ApprovalStore as _ApprovalStore
             from saaya.jobs.store import JobStore as _JobStore
-            from saaya.jobs.tools import make_check_jobs_tool, make_start_job_tool
+            from saaya.jobs.tools import (
+                make_check_jobs_tool,
+                make_read_artifact_tool,
+                make_start_job_tool,
+            )
 
             _chat_jobs = _JobStore(engine)
+            _chat_approvals = _ApprovalStore(engine)
             chat_job_tools = [
                 make_start_job_tool(_chat_jobs),
-                make_check_jobs_tool(_chat_jobs, _ApprovalStore(engine)),
+                make_check_jobs_tool(_chat_jobs, _chat_approvals),
+                make_read_artifact_tool(_chat_jobs, _chat_approvals, resolved.jobs_workspace_dir),
             ]
 
             async def rebuild_agent() -> None:

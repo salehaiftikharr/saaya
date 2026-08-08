@@ -23,21 +23,15 @@ import {
 // and a hand that closed it wins for the rest of the session. Everything it
 // renders is the persisted ledger.
 
-export function useThreadJobs(threadId: string | null): JobInfo[] {
+export function useAllJobs(): JobInfo[] {
 	const [jobs, setJobs] = useState<JobInfo[]>([]);
 
 	useEffect(() => {
-		if (!threadId) {
-			setJobs([]);
-			return;
-		}
 		let cancelled = false;
 		const load = () => {
 			listJobs()
 				.then((all) => {
-					if (!cancelled) {
-						setJobs(all.filter((job) => job.thread_id === threadId));
-					}
+					if (!cancelled) setJobs(all);
 				})
 				.catch(() => {});
 		};
@@ -49,7 +43,7 @@ export function useThreadJobs(threadId: string | null): JobInfo[] {
 			cancelled = true;
 			clearInterval(timer);
 		};
-	}, [threadId]);
+	}, []);
 
 	return jobs;
 }
@@ -69,7 +63,15 @@ function JobBench({ jobId }: { jobId: string }) {
 	}, [load]);
 
 	useEffect(() => {
-		if (!detail || !LIVE_STATES.has(detail.job.state)) return;
+		if (!detail) return;
+		const state = detail.job.state;
+		// waiting_approval and queued also poll: decisions can arrive from
+		// the Work view, and the claim loop picks queued jobs up on its own.
+		const settled =
+			!LIVE_STATES.has(state) &&
+			state !== "waiting_approval" &&
+			state !== "queued";
+		if (settled) return;
 		const timer = setInterval(load, 1500);
 		return () => clearInterval(timer);
 	}, [detail, load]);
@@ -105,7 +107,17 @@ function JobBench({ jobId }: { jobId: string }) {
 		<div className="flex flex-col gap-4 px-4 py-4">
 			<div className="flex flex-col gap-2">
 				<JobStateBadge state={job.state} />
-				<p className="text-sm leading-relaxed">{job.goal}</p>
+				<details className="group">
+					<summary className="cursor-pointer list-none">
+						<p className="line-clamp-3 text-sm leading-relaxed group-open:hidden">
+							{job.goal}
+						</p>
+						<span className="text-muted-foreground text-xs underline-offset-4 hover:underline group-open:hidden">
+							Show the full goal
+						</span>
+					</summary>
+					<p className="text-sm leading-relaxed">{job.goal}</p>
+				</details>
 				{job.error && (
 					<p className="rounded-md bg-destructive/10 px-3 py-2 text-destructive text-xs">
 						{job.error}

@@ -27,7 +27,7 @@ import {
 	SheetTrigger,
 } from "@/components/ui/sheet";
 import { WorkPanel } from "@/components/work/work-panel";
-import { useThreadJobs, Workbench } from "@/components/work/workbench";
+import { useAllJobs, Workbench } from "@/components/work/workbench";
 import { Composer } from "./composer";
 import { ContinuityStrip } from "./continuity-strip";
 import { Message } from "./message";
@@ -59,7 +59,8 @@ export function ChatApp() {
 
 	// The workbench opens when the conversation owns work and reveals itself
 	// when work starts mid-thread; a close wins until the thread changes.
-	const threadJobs = useThreadJobs(activeThread);
+	const allJobs = useAllJobs();
+	const threadJobs = allJobs.filter((job) => job.thread_id === activeThread);
 	const [benchOpen, setBenchOpen] = useState(false);
 	const benchClosed = useRef(false);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: this is a reset-on-thread-change effect; the thread id is the trigger, not an input
@@ -171,6 +172,7 @@ export function ChatApp() {
 					threads={threads}
 					activeThread={activeThread}
 					disabled={working}
+					jobs={allJobs}
 					onSelect={(id) => {
 						setView("chat");
 						switchThread(id);
@@ -398,6 +400,7 @@ export function ChatApp() {
 						<Composer
 							disabled={working}
 							working={working}
+							threadId={activeThread}
 							onSend={send}
 							onStop={stop}
 						/>

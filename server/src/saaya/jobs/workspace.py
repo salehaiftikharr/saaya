@@ -38,6 +38,12 @@ def resolve_inside(workspace: Path, candidate: str) -> Path:
     return resolved
 
 
+def _visible(workspace: Path, path: Path) -> bool:
+    """Dot-directories (the scrubbed HOME, .git internals) are runtime
+    machinery, not the job's work product."""
+    return not any(part.startswith(".") for part in path.relative_to(workspace).parts)
+
+
 def workspace_usage(workspace: Path) -> int:
     return sum(f.stat().st_size for f in workspace.rglob("*") if f.is_file())
 
@@ -70,6 +76,6 @@ def list_files(workspace: Path) -> list[dict[str, object]]:
     """Every file in the workspace, relative paths and sizes, sorted."""
     rows: list[dict[str, object]] = []
     for path in sorted(workspace.rglob("*")):
-        if path.is_file():
+        if path.is_file() and _visible(workspace, path):
             rows.append({"path": str(path.relative_to(workspace)), "size": path.stat().st_size})
     return rows

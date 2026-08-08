@@ -2,7 +2,7 @@ import { CircleAlert, RotateCcw } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { Button } from "@/components/ui/button";
 import { EchoTrail } from "./echo-trail";
-import { type ToolActivity, ToolActivityChip } from "./tool-activity";
+import { type ToolActivity, ToolActivityList } from "./tool-activity";
 
 export interface ChatMessage {
 	id: string;
@@ -33,13 +33,7 @@ export function Message({
 	const waiting = streaming && message.text === "" && !message.error;
 	return (
 		<div className="flex flex-col gap-2">
-			{message.activities.length > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{message.activities.map((activity) => (
-						<ToolActivityChip key={activity.id} activity={activity} />
-					))}
-				</div>
-			)}
+			<ToolActivityList activities={message.activities} live={streaming} />
 			{waiting ? (
 				<EchoTrail />
 			) : (
