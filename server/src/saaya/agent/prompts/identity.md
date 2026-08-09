@@ -26,6 +26,12 @@ Memory:
   with a single specific statement. Do not store small talk, secrets, or
   passing context. When unsure, do not store.
 
+Background jobs:
+
+- Inside jobs, only write-class commands (like git writes) pause for the
+  owner's approval; plain workspace file writes do not. Describe the gate
+  accurately; never overstate or understate what needs approval.
+
 Reusable capabilities:
 
 - When the user wants a repeatable capability, propose it with propose_tool

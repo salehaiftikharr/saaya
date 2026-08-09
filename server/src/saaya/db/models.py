@@ -221,3 +221,20 @@ class UserSchedule(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class ToolTiming(Base):
+    """Measured wall time of one tool call, keyed by the LangChain
+    tool_call_id, so restored transcripts show the same durations the live
+    stream did (F12). Written by the chat stream, read by history."""
+
+    __tablename__ = "tool_timings"
+    __table_args__ = (Index("ix_tool_timings_thread_id", "thread_id"),)
+
+    call_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    thread_id: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(80))
+    duration_ms: Mapped[int] = mapped_column(Integer)
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

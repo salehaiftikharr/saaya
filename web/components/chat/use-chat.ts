@@ -27,11 +27,15 @@ function fromTranscript(entries: TranscriptMessage[]): ChatMessage[] {
 			name: activity.name,
 			state: "done" as const,
 			outputPreview: activity.output_preview,
+			durationMs: activity.duration_ms ?? undefined,
 		})),
 	}));
 }
 
-export function useChat() {
+const OFFLINE_TURN_COPY =
+	"Saaya is offline; this will retry cleanly when the connection returns.";
+
+export function useChat(offlineRef?: { current: boolean }) {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [status, setStatus] = useState<ChatStatus>("idle");
 	const [loadError, setLoadError] = useState<string | null>(null);
@@ -45,7 +49,10 @@ export function useChat() {
 	const refreshThreads = useCallback(() => {
 		fetchThreads()
 			.then(setThreads)
-			.catch(() => setThreads([]));
+			.catch(() => {
+				// A transient failure must not wipe the sidebar (F6); the
+				// last-known list stands until a fetch succeeds again.
+			});
 	}, []);
 
 	const loadThread = useCallback((threadId: string) => {
@@ -91,6 +98,7 @@ export function useChat() {
 		[],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: offlineRef is a stable ref read at failure time, not a reactive input
 	const send = useCallback(
 		async (text: string) => {
 			if (status === "working") return;
@@ -121,7 +129,9 @@ export function useChat() {
 				});
 				if (!response.ok || !response.body) {
 					throw new Error(
-						`The server answered with status ${response.status}.`,
+						offlineRef?.current
+							? OFFLINE_TURN_COPY
+							: `The server answered with status ${response.status}.`,
 					);
 				}
 				for await (const event of readWireEvents(response.body)) {
@@ -153,9 +163,11 @@ export function useChat() {
 											...activity,
 											state: "done" as const,
 											outputPreview: event.output_preview,
-											durationMs: activity.startedAt
-												? Date.now() - activity.startedAt
-												: undefined,
+											durationMs:
+												event.duration_ms ??
+												(activity.startedAt
+													? Date.now() - activity.startedAt
+													: undefined),
 										}
 									: activity,
 							),
@@ -171,8 +183,14 @@ export function useChat() {
 						error: "Stopped. The reply ends here; send again to continue.",
 					}));
 				} else {
-					const message =
-						error instanceof Error ? error.message : "The request failed.";
+					// Connection-refused surfaces as a proxy 500 or a fetch
+					// TypeError; when health already knows Saaya is offline,
+					// say that instead of leaking proxy mechanics (F13).
+					const message = offlineRef?.current
+						? OFFLINE_TURN_COPY
+						: error instanceof Error
+							? error.message
+							: "The request failed.";
 					updateLast((m) => ({ ...m, error: message }));
 					toast("Connection interrupted", {
 						description: "The turn ended early; retry when ready.",

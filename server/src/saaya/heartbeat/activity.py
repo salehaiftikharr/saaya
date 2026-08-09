@@ -162,3 +162,41 @@ class ThreadActivity:
 
         async with self._engine.connect() as connection:
             return await connection.run_sync(_query)
+
+    async def record_tool_timing(
+        self, thread_id: str, call_id: str, name: str, duration_ms: int
+    ) -> None:
+        """Upsert one measured tool duration (F12); the stream may replay a
+        call id on reconnect, and last write wins."""
+        from saaya.db.models import ToolTiming
+
+        statement = (
+            insert(ToolTiming)
+            .values(call_id=call_id, thread_id=thread_id, name=name, duration_ms=duration_ms)
+            .on_conflict_do_update(
+                index_elements=[ToolTiming.call_id], set_={"duration_ms": duration_ms}
+            )
+        )
+
+        def _upsert(sync_conn: Connection) -> None:
+            with Session(bind=sync_conn) as session:
+                session.execute(statement)
+                session.commit()
+
+        async with self._engine.connect() as connection:
+            await connection.run_sync(_upsert)
+
+    async def tool_timings(self, thread_id: str) -> dict[str, int]:
+        from saaya.db.models import ToolTiming
+
+        def _query(sync_conn: Connection) -> dict[str, int]:
+            with Session(bind=sync_conn) as session:
+                rows = session.execute(
+                    select(ToolTiming.call_id, ToolTiming.duration_ms).where(
+                        ToolTiming.thread_id == thread_id
+                    )
+                ).all()
+                return {str(call_id): int(ms) for call_id, ms in rows}
+
+        async with self._engine.connect() as connection:
+            return await connection.run_sync(_query)

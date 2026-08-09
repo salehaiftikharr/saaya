@@ -27,6 +27,8 @@ class ToolFinished(BaseModel):
     event: Literal["tool.finished"] = "tool.finished"
     name: str
     output_preview: str
+    duration_ms: int | None = None
+    call_id: str | None = None
 
 
 class TurnDone(BaseModel):

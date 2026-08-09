@@ -12,6 +12,7 @@ from pydantic import BaseModel
 class TranscriptActivity(BaseModel):
     name: str
     output_preview: str
+    duration_ms: int | None = None
 
 
 class TranscriptMessage(BaseModel):
@@ -43,7 +44,9 @@ def _text_of(message: Any) -> str:
     return ""
 
 
-def to_transcript(messages: list[Any]) -> list[TranscriptMessage]:
+def to_transcript(
+    messages: list[Any], timings: dict[str, int] | None = None
+) -> list[TranscriptMessage]:
     """User and assistant turns; tool calls and their result previews ride
     the assistant turn that produced them, so a restored conversation shows
     the same work the live stream did."""
@@ -73,6 +76,7 @@ def to_transcript(messages: list[Any]) -> list[TranscriptMessage]:
                 TranscriptActivity(
                     name=tool_names.get(call_id, "tool"),
                     output_preview=_text_of(message)[:200],
+                    duration_ms=(timings or {}).get(call_id),
                 )
             )
     return transcript

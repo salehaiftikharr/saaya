@@ -1,6 +1,12 @@
 "use client";
 
-import { ChevronDown, PanelRightClose, UnfoldHorizontal } from "lucide-react";
+import {
+	ChevronDown,
+	OctagonX,
+	PanelRightClose,
+	RotateCcw,
+	UnfoldHorizontal,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,6 +21,7 @@ import { ArtifactList } from "@/components/work/artifact-list";
 import { JobStateBadge } from "@/components/work/job-state-badge";
 import { JobTimeline } from "@/components/work/job-timeline";
 import {
+	cancelJob,
 	decideApproval,
 	fetchJob,
 	type JobDetail,
@@ -22,6 +29,7 @@ import {
 	jobEventsUrl,
 	LIVE_STATES,
 	listJobs,
+	retryJob,
 	TERMINAL_STATES,
 } from "@/lib/jobs-api";
 import { cn } from "@/lib/utils";
@@ -97,9 +105,13 @@ function BenchBlock({
 	children: React.ReactNode;
 	defaultOpen?: boolean;
 }) {
+	// Controlled from the first render (F8): flipping the preference later
+	// must never mutate an uncontrolled Collapsible's default.
+	const [open, setOpen] = useState(defaultOpen);
 	return (
 		<Collapsible
-			defaultOpen={defaultOpen}
+			open={open}
+			onOpenChange={setOpen}
 			className="rounded-lg border bg-card"
 		>
 			<CollapsibleTrigger className="group/block flex w-full items-center gap-2 px-3 py-2 text-left">
@@ -199,6 +211,16 @@ export function JobBench({ jobId }: { jobId: string }) {
 	}
 	const { job, events, approvals, artifacts } = detail;
 	const pending = approvals.filter((approval) => approval.decision === null);
+	const act = async (action: "cancel" | "retry") => {
+		try {
+			await (action === "cancel" ? cancelJob(job.id) : retryJob(job.id));
+			toast(action === "cancel" ? "Cancel recorded" : "Retry started");
+		} catch (failure) {
+			toast.error(String(failure instanceof Error ? failure.message : failure));
+		} finally {
+			load();
+		}
+	};
 	const plan = planFromEvents(events);
 	const handoff = [...events]
 		.reverse()
@@ -206,7 +228,31 @@ export function JobBench({ jobId }: { jobId: string }) {
 	return (
 		<div className="flex flex-col gap-3 px-4 py-4">
 			<div className="flex flex-col gap-2">
-				<JobStateBadge state={job.state} />
+				<div className="flex items-center gap-2">
+					<JobStateBadge state={job.state} />
+					{(job.state === "failed" || job.state === "blocked") && (
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-6 gap-1.5 px-2 text-xs"
+							onClick={() => act("retry")}
+						>
+							<RotateCcw className="size-3" />
+							Retry from where it stopped
+						</Button>
+					)}
+					{LIVE_STATES.has(job.state) && (
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-6 gap-1.5 px-2 text-muted-foreground text-xs"
+							onClick={() => act("cancel")}
+						>
+							<OctagonX className="size-3" />
+							Stop
+						</Button>
+					)}
+				</div>
 				<details className="group">
 					<summary className="cursor-pointer list-none">
 						<p className="line-clamp-3 text-sm leading-relaxed group-open:hidden">

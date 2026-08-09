@@ -35,6 +35,12 @@ class HealthResponse(BaseModel):
     jobs: JobsHealth | None = None
 
 
+@router.get("/health", include_in_schema=False)
+async def health_alias() -> dict[str, str]:
+    """Bare liveness for habitual probes (F14); details live at /api/health."""
+    return {"status": "ok"}
+
+
 @router.get("/api/health")
 async def health(request: Request) -> HealthResponse:
     state = request.app.state
@@ -85,6 +91,17 @@ async def chat(request: Request, body: ChatRequest) -> StreamingResponse:
         try:
             events = agent.astream_events(payload, config=config, version="v2")
             async for wire_event in to_wire_events(events):
+                if (
+                    wire_event.event == "tool.finished"
+                    and wire_event.call_id
+                    and wire_event.duration_ms is not None
+                ):
+                    await request.app.state.thread_activity.record_tool_timing(
+                        thread_id,
+                        wire_event.call_id,
+                        wire_event.name,
+                        wire_event.duration_ms,
+                    )
                 yield _sse(wire_event)
             yield _sse(TurnDone())
         except Exception as error:
@@ -110,7 +127,8 @@ async def chat(request: Request, body: ChatRequest) -> StreamingResponse:
 async def thread_messages(request: Request, thread_id: str) -> list[TranscriptMessage]:
     agent = request.app.state.agent
     state = await agent.aget_state({"configurable": {"thread_id": thread_id}})
-    return to_transcript(state.values.get("messages", []))
+    timings = await request.app.state.thread_activity.tool_timings(thread_id)
+    return to_transcript(state.values.get("messages", []), timings)
 
 
 class ContextItem(BaseModel):

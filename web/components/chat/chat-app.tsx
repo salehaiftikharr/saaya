@@ -33,6 +33,9 @@ import { Message } from "./message";
 import { useChat } from "./use-chat";
 
 export function ChatApp() {
+	// Written each render from the health poll; read by useChat at failure
+	// time so offline turns get honest copy without a re-render dependency.
+	const offlineRef = useRef(false);
 	const {
 		messages,
 		status,
@@ -48,7 +51,7 @@ export function ChatApp() {
 		refreshThreads,
 		stop,
 		retry,
-	} = useChat();
+	} = useChat(offlineRef);
 	const [view, setView] = useState<AppView>("chat");
 	const [paletteOpen, setPaletteOpen] = useState(false);
 	const [nearBottom, setNearBottom] = useState(true);
@@ -56,6 +59,15 @@ export function ChatApp() {
 	const scrollHostRef = useRef<HTMLDivElement | null>(null);
 
 	const health = useHealth();
+	offlineRef.current = health.offline;
+
+	// Recovery refreshes what the outage may have hidden (F6): the thread
+	// list returns as soon as the health poll sees the server again.
+	const wasOffline = useRef(false);
+	useEffect(() => {
+		if (wasOffline.current && !health.offline) refreshThreads();
+		wasOffline.current = health.offline;
+	}, [health.offline, refreshThreads]);
 
 	// The workbench opens when the conversation owns work and reveals itself
 	// when work starts mid-thread; a close wins until the thread changes.

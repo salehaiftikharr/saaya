@@ -5,12 +5,22 @@ export type WireEvent =
 	| { event: "thread.started"; thread_id: string }
 	| { event: "text.delta"; text: string }
 	| { event: "tool.started"; name: string }
-	| { event: "tool.finished"; name: string; output_preview: string }
+	| {
+			event: "tool.finished";
+			name: string;
+			output_preview: string;
+			duration_ms?: number | null;
+			call_id?: string | null;
+	  }
 	| { event: "turn.done" }
 	| { event: "turn.error"; message: string };
 
 export interface TranscriptMessage {
 	role: "user" | "assistant";
 	text: string;
-	activities?: { name: string; output_preview: string }[];
+	activities?: {
+		name: string;
+		output_preview: string;
+		duration_ms?: number | null;
+	}[];
 }
