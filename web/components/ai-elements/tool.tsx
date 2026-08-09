@@ -80,20 +80,25 @@ export const ToolHeader = ({
 }: ToolHeaderProps) => (
 	<CollapsibleTrigger
 		className={cn(
-			"group flex w-full items-center justify-between gap-4 p-3",
+			"group flex w-full items-center justify-between gap-4 overflow-hidden p-3",
 			className,
 		)}
 		{...props}
 	>
-		<div className="flex items-center gap-2">
+		<div className="flex shrink-0 items-center gap-2">
 			{icon ?? <WrenchIcon className="size-4 text-muted-foreground" />}
 			<span className="font-medium text-sm">
 				{title ?? type.split("-").slice(1).join("-")}
 			</span>
 		</div>
-		<div className="flex items-center gap-2">
-			{summary ?? getStatusBadge(state)}
-			<ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[panel-open]:rotate-180" />
+		{/* min-w-0 down this chain is what lets a truncate inside the summary
+		    actually truncate; without it a long unbroken token (an id, a
+		    path) forces the row past the card edge. */}
+		<div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+			<div className="flex min-w-0 items-center overflow-hidden">
+				{summary ?? getStatusBadge(state)}
+			</div>
+			<ChevronDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[panel-open]:rotate-180" />
 		</div>
 	</CollapsibleTrigger>
 );
