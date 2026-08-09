@@ -19,6 +19,10 @@ const BANNED: RegExp[] = [
 
 const SKIP_SUFFIXES = [".png", ".ico", ".lock", "pnpm-lock.yaml", "uv.lock"];
 const SELF = "web/lib/privacy.test.ts";
+// The MIT copyright line is the one owner-authorized home for the owner's
+// name in the tracked tree (the owner chose the license explicitly). Only
+// this exact file is exempt; the gate holds everywhere else.
+const AUTHORIZED = ["LICENSE"];
 
 function trackedFiles(): string[] {
 	const out = execFileSync("git", ["ls-files"], {
@@ -29,6 +33,7 @@ function trackedFiles(): string[] {
 		.split("\n")
 		.filter(Boolean)
 		.filter((path) => path !== SELF)
+		.filter((path) => !AUTHORIZED.includes(path))
 		.filter((path) => !SKIP_SUFFIXES.some((suffix) => path.endsWith(suffix)));
 }
 
