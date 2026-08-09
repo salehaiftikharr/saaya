@@ -139,3 +139,15 @@ class TestStructurePreservation:
         before, after = _no_protected_change()
         result = validate_change("how-i-work.md", HOW, HOW + "- new bullet\n", before, after)
         assert not any(v.rule == "structure" for v in result)
+
+
+def test_reflection_tolerates_missing_files(tmp_path: Path) -> None:
+    """A missing memory file returns empty instead of crash-looping (F5)."""
+    from saaya.reflection.runner import ReflectionRunner
+
+    async def proposer(current: str, transcript: str) -> str | None:
+        return None
+
+    runner = ReflectionRunner(tmp_path / "nonexistent", proposer)
+    # Reaching into the read is deliberate: the tolerance IS the contract.
+    assert runner._read("how-i-work.md") == ""  # pyright: ignore[reportPrivateUsage]

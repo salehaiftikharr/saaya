@@ -5,6 +5,7 @@ events; gated commands go through the ADR-007 approval flow."""
 import asyncio
 import json
 from pathlib import Path
+from typing import cast
 
 from langchain_core.tools import BaseTool, StructuredTool
 
@@ -22,6 +23,70 @@ APPROVAL_WAIT_TEXT = (
     "run. The request has been recorded. End this step now; the job will "
     "resume once a decision is made."
 )
+
+
+def _fmt(argv: object) -> str:
+    if isinstance(argv, list):
+        return " ".join(str(item) for item in cast("list[object]", argv))
+    return str(argv)
+
+
+async def settle_decided_approvals(
+    workspace: Path, store: JobStore, approvals: ApprovalStore, job_id: str
+) -> str:
+    """Honor owner decisions in code before the model runs, so an approval is
+    an enforced fact rather than a hope the model may or may not act on (F1).
+
+    An approved command is executed here, deterministically, with its ledger
+    event and consumption; a rejected one is recorded and consumed. Returns a
+    note the executor relays so the model does not re-issue what already ran.
+    """
+    notes: list[str] = []
+    for approval in await approvals.for_job(job_id):
+        if approval.decision is None or approval.consumed_at is not None:
+            continue
+        argv = approval.payload.get("argv")
+        if approval.decision == "rejected":
+            await approvals.consume(approval.id)
+            await store.append_event(
+                job_id,
+                "approval_rejected",
+                {"approval_id": approval.id, "preview": approval.preview},
+                actor="user",
+            )
+            notes.append(
+                f"The owner rejected `{_fmt(argv)}`. Do not attempt it again; "
+                "adjust the step or report the limitation honestly."
+            )
+            continue
+        await store.append_event(
+            job_id,
+            "approval_accepted",
+            {"approval_id": approval.id, "preview": approval.preview},
+            actor="user",
+        )
+        if isinstance(argv, list):
+            command = [str(item) for item in cast("list[object]", argv)]
+            result = await asyncio.to_thread(run_command, workspace, command)
+            await store.append_event(
+                job_id,
+                "command_executed",
+                {
+                    "argv": command,
+                    "exit_code": result.exit_code,
+                    "duration_ms": result.duration_ms,
+                    "truncated": result.truncated,
+                },
+            )
+            await approvals.consume(approval.id)
+            notes.append(
+                f"The owner-approved command `{' '.join(command)}` was already "
+                f"run for you (exit {result.exit_code}). Do not run it again; "
+                "continue the step with that result in hand."
+            )
+        else:
+            await approvals.consume(approval.id)
+    return "\n".join(notes)
 
 
 def build_job_tools(

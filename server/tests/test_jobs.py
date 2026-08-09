@@ -125,7 +125,7 @@ async def test_runner_happy_path_records_full_ledger(
     async def planner(goal: str, ws: Path) -> list[PlanStep]:
         return two_step_planner()
 
-    async def executor(step: PlanStep, ws: Path, job: JobView) -> str:
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
         (ws / step["creates"][0]).write_text("done")
         return f"wrote {step['creates'][0]}"
 
@@ -165,7 +165,7 @@ async def test_failed_step_resumes_from_checkpoint_in_a_new_runner(
     async def planner(goal: str, ws: Path) -> list[PlanStep]:
         return two_step_planner()
 
-    async def executor(step: PlanStep, ws: Path, job: JobView) -> str:
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
         executed.append(step["creates"][0])
         if step["creates"][0] == "b.md" and crash["armed"]:
             crash["armed"] = False
@@ -217,7 +217,7 @@ async def test_step_budget_blocks_and_retry_continues(
     async def planner(goal: str, ws: Path) -> list[PlanStep]:
         return two_step_planner()
 
-    async def executor(step: PlanStep, ws: Path, job: JobView) -> str:
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
         (ws / step["creates"][0]).write_text("done")
         return "ok"
 
@@ -247,7 +247,7 @@ async def test_cancel_stops_at_the_next_step_boundary(
     async def planner(goal: str, ws: Path) -> list[PlanStep]:
         return two_step_planner()
 
-    async def executor(step: PlanStep, ws: Path, job: JobView) -> str:
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
         (ws / step["creates"][0]).write_text("done")
         if step["creates"][0] == "a.md":
             await store.transition(created.id, states.CANCELLED, actor="user")
@@ -271,7 +271,7 @@ async def test_worker_recovers_stranded_jobs(
     async def planner(goal: str, ws: Path) -> list[PlanStep]:
         return [{"intent": "one file", "creates": ["a.md"]}]
 
-    async def executor(step: PlanStep, ws: Path, job: JobView) -> str:
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
         (ws / "a.md").write_text("done")
         return "ok"
 
@@ -306,3 +306,14 @@ def test_parse_plan_rejects_empty_and_shapeless() -> None:
         parse_plan('[{"creates": []}]')
     with pytest.raises(ValueError):
         parse_plan('"just a string"')
+
+
+def test_parse_plan_rejects_directory_shaped_creates() -> None:
+    with pytest.raises(ValueError):
+        parse_plan('{"steps": [{"intent": "make dir", "creates": ["out/"]}]}')
+    with pytest.raises(ValueError):
+        parse_plan('{"steps": [{"intent": "empty entry", "creates": [""]}]}')
+    steps = parse_plan(
+        '{"steps": [{"intent": "hidden config is a file", "creates": [".gitignore"]}]}'
+    )
+    assert steps[0]["creates"] == [".gitignore"]

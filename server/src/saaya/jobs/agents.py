@@ -21,9 +21,11 @@ Goal:
 Produce a JSON object: {{"steps": [{{"intent": "...", "creates": ["relative/path.md"]}}]}}.
 Rules: between 1 and 6 steps; each intent is one concrete action a worker can
 finish in one sitting using only files inside the workspace; creates lists the
-relative paths that step must leave existing (empty list if none). The final
-step must leave a written result in the workspace. No network access exists.
-Answer with the JSON only."""
+relative FILE paths that step must leave existing (empty list if none). List
+files only, never directories: for a step like git init whose product is a
+directory, list a file you will also write (a note or log), not the
+directory. The final step must leave a written result in the workspace. No
+network access exists. Answer with the JSON only."""
 
 EXECUTE_PROMPT = """You are Saaya's job worker. You execute exactly one step
 of a plan inside a controlled workspace. You can only act through your
@@ -33,6 +35,12 @@ If a command answers APPROVAL_REQUIRED, end the step immediately with a
 short note; the job resumes after the owner decides. Do the step fully,
 create any files the step promises, and finish with a two-sentence summary
 of what you did. Do not start other steps.
+
+Honesty is absolute: never fabricate facts, files, or results, and never
+claim work you did not do. If you could not complete the step, say so
+plainly; a truthful failure is worth more than a convincing success that
+did not happen. Your summary must describe only what your tools actually
+did.
 
 Job goal:
 {goal}
@@ -60,24 +68,12 @@ def build_executor(settings: Settings, store: JobStore, approvals: ApprovalStore
     provider, _, model_name = settings.chat_model.partition(":")
     model = init_chat_model(model_name, model_provider=provider, api_key=settings.claude_api_key)
 
-    async def execute(step: PlanStep, workspace: Path, job: JobView) -> str:
-        # A step that re-runs after an approval decision must know it: the
-        # fresh invocation would otherwise see finished files and skip the
-        # gated command the owner just approved.
-        notes = ""
-        cleared: list[str] = []
-        for a in await approvals.for_job(job.id):
-            if a.decision != "approved" or a.consumed_at is not None:
-                continue
-            argv = a.payload.get("argv", [])
-            items = cast("list[object]", argv) if isinstance(argv, list) else []
-            parts = [str(item) for item in items]
-            cleared.append(f"`{' '.join(parts)}`")
-        if cleared:
-            notes = (
-                "\n\nThe owner has APPROVED these previously gated commands; "
-                "run them now with run_command before finishing the step: " + ", ".join(cleared)
-            )
+    async def execute(step: PlanStep, workspace: Path, job: JobView, note: str) -> str:
+        # checkpointer=False keeps each step invocation genuinely fresh:
+        # without it, deepagents inherits the job graph's checkpointer through
+        # LangGraph config propagation and a resumed step replays its own
+        # finished conversation instead of doing the work (F1). The runner has
+        # already executed any owner-approved commands and hands us `note`.
         agent = create_deep_agent(  # pyright: ignore[reportUnknownVariableType]
             model=model,
             tools=build_job_tools(workspace, store, approvals, job.id),
@@ -86,9 +82,13 @@ def build_executor(settings: Settings, store: JobStore, approvals: ApprovalStore
                 intent=step.get("intent", ""),
                 creates=", ".join(step.get("creates", [])) or "none",
             ),
+            checkpointer=False,
         )
+        opening = "Execute the step now."
+        if note:
+            opening = f"{opening}\n\n{note}"
         result = await agent.ainvoke(  # pyright: ignore[reportUnknownMemberType]
-            {"messages": [{"role": "user", "content": f"Execute the step now.{notes}"}]},
+            {"messages": [{"role": "user", "content": opening}]},
             config={"recursion_limit": 40},
         )
         messages = result.get("messages", [])

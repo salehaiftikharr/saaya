@@ -33,7 +33,10 @@ class ReflectionRunner:
         self._ledger = VersionLedger(memory_dir)
 
     def _read(self, name: str) -> str:
-        return (self._memory_dir / name).read_text(encoding="utf-8")
+        # Boot seeding creates these files; tolerance here is defense in
+        # depth so one missing file can never crash-loop the heartbeat (F5).
+        target = self._memory_dir / name
+        return target.read_text(encoding="utf-8") if target.exists() else ""
 
     def _protected_contents(self) -> dict[str, str]:
         return {name: self._read(name) for name in sorted(PROTECTED_FILES)}

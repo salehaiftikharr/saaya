@@ -13,13 +13,16 @@ from langgraph.graph import END, START, StateGraph
 
 from saaya.jobs import states
 from saaya.jobs.store import ApprovalStore, JobStore, JobView
+from saaya.jobs.tools import settle_decided_approvals
 from saaya.jobs.workspace import job_workspace, list_files
 
 # A step is data: what to do, and which files must exist afterwards. The
 # creates list is the deterministic done-check; there are no judge models.
+# The executor's fourth argument is the settled-approvals note (F1): what the
+# runner already ran on the owner's behalf before this invocation.
 PlanStep = dict[str, Any]
 Planner = Callable[[str, Path], Awaitable[list[PlanStep]]]
-Executor = Callable[[PlanStep, Path, JobView], Awaitable[str]]
+Executor = Callable[[PlanStep, Path, JobView, str], Awaitable[str]]
 
 
 class JobRunState(TypedDict, total=False):
@@ -114,15 +117,23 @@ class JobRunner:
                 {"n": index + 1, "of": len(plan), "intent": step.get("intent", "")},
             )
             try:
-                summary = await executor(step, workspace, job)
+                # Owner decisions are honored here, in the runner, before the
+                # model runs: an approved command is executed and recorded
+                # deterministically, so a resumed step cannot skip it however
+                # the model behaves (F1). The note tells the executor what
+                # already ran.
+                note = ""
+                if approvals is not None:
+                    note = await settle_decided_approvals(workspace, store, approvals, job_id)
+                summary = await executor(step, workspace, job, note)
                 if approvals is not None and await approvals.pending(job_id) is not None:
-                    # The step asked for a gated action; hold here. On
-                    # resume the whole step re-runs and the tool consumes
-                    # the recorded decision (ADR-007).
+                    # The step asked for a fresh gated action; hold here. On
+                    # resume the decision is settled deterministically above,
+                    # then this step re-runs (ADR-007).
                     await store.transition(job_id, states.WAITING_APPROVAL)
                     raise JobHalt(states.WAITING_APPROVAL)
                 missing = [
-                    path for path in step.get("creates", []) if not (workspace / path).is_file()
+                    path for path in step.get("creates", []) if not (workspace / path).exists()
                 ]
                 if missing:
                     raise StepFailed(f"step did not create: {', '.join(missing)}")
@@ -214,10 +225,15 @@ def parse_plan(raw: str) -> list[PlanStep]:
         creates_raw = entry.get("creates", [])
         if not isinstance(creates_raw, list):
             raise ValueError("creates must be a list")
-        steps.append(
-            {
-                "intent": intent,
-                "creates": [str(path) for path in cast("list[object]", creates_raw)],
-            }
-        )
+        creates: list[str] = []
+        for path_obj in cast("list[object]", creates_raw):
+            path = str(path_obj).strip()
+            # An empty or trailing-slash entry is unambiguously not a file
+            # and fails loudly at planning time (F3). Dotfiles like
+            # .gitignore stay legal; the runtime done-check uses exists(),
+            # so a directory the work genuinely produces still validates.
+            if not path or path.endswith("/"):
+                raise ValueError(f"creates entries must be file paths: {path!r}")
+            creates.append(path)
+        steps.append({"intent": intent, "creates": creates})
     return steps

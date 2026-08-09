@@ -128,8 +128,8 @@ async def test_runner_holds_in_waiting_approval_and_resumes(
     engine: AsyncEngine, saver: AsyncPostgresSaver, tmp_path: Path
 ) -> None:
     """The node-level seam: a step that requests approval parks the job in
-    waiting_approval; after the decision, the same step re-runs and
-    completes."""
+    waiting_approval; after the decision, the runner settles it and the
+    re-run step continues with the note instead of re-issuing."""
     store = JobStore(engine)
     approvals = ApprovalStore(engine)
     created = await store.create(goal="approval seam")
@@ -139,8 +139,11 @@ async def test_runner_holds_in_waiting_approval_and_resumes(
     async def planner(goal: str, ws: Path) -> list[PlanStep]:
         return [{"intent": "stage the note", "creates": ["notes.md"]}]
 
-    async def executor(step: PlanStep, ws: Path, job: JobView) -> str:
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
         (ws / "notes.md").write_text("note")
+        if "already run" in note:
+            # A compliant model does not re-issue what the runner settled.
+            return "continued with the settled result"
         tools = build_job_tools(ws, store, approvals, job.id)
         run = _tool(tools, "run_command")
         outcome = await run.ainvoke({"command": ["git", "add", "notes.md"]})  # type: ignore[attr-defined]
@@ -162,6 +165,95 @@ async def test_runner_holds_in_waiting_approval_and_resumes(
     assert final is not None and final.state == states.COMPLETED
     types = [e.type for e in await store.events(created.id)]
     assert "approval_accepted" in types and "command_executed" in types
+
+
+async def test_approved_command_runs_even_if_the_model_does_nothing(
+    engine: AsyncEngine, saver: AsyncPostgresSaver, tmp_path: Path
+) -> None:
+    """The F1 regression: a resumed step whose executor makes zero tool
+    calls must still execute the owner-approved command, because the runner
+    settles decisions deterministically before the model runs."""
+    store = JobStore(engine)
+    approvals = ApprovalStore(engine)
+    created = await store.create(goal="settled without model help")
+    claimed = await store.claim_queued()
+    assert claimed is not None
+    calls: list[str] = []
+
+    async def planner(goal: str, ws: Path) -> list[PlanStep]:
+        return [{"intent": "stage the note", "creates": ["notes.md"]}]
+
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
+        calls.append(note)
+        (ws / "notes.md").write_text("note")
+        if note:
+            # Simulates the F1 failure mode: the model concludes instantly
+            # and issues no tool calls on the resumed run.
+            return "wrapped up in one quick turn"
+        tools = build_job_tools(ws, store, approvals, job.id)
+        run = _tool(tools, "run_command")
+        await run.ainvoke({"command": ["git", "add", "notes.md"]})  # type: ignore[attr-defined]
+        return "requested"
+
+    runner = JobRunner(store, saver, tmp_path, planner, executor, approvals=approvals)
+    await runner.run(claimed)
+    pending = await approvals.pending(created.id)
+    assert pending is not None
+    await approvals.decide(pending.id, "approved")
+    resumed = await store.get(created.id)
+    assert resumed is not None
+    await runner.run(resumed)
+
+    final = await store.get(created.id)
+    assert final is not None and final.state == states.COMPLETED
+    types = [e.type for e in await store.events(created.id)]
+    assert types.count("command_executed") == 1, "the runner ran it, not the model"
+    assert "approval_accepted" in types
+    settled = await approvals.for_job(created.id)
+    assert all(a.consumed_at is not None for a in settled), "decision consumed"
+    assert len(calls) == 2 and "already run" in calls[1]
+
+
+async def test_rejected_decision_is_settled_and_delivered(
+    engine: AsyncEngine, saver: AsyncPostgresSaver, tmp_path: Path
+) -> None:
+    """The F19 path, now executing for real: a rejection is consumed by the
+    runner, recorded, never executed, and delivered to the model as a note."""
+    store = JobStore(engine)
+    approvals = ApprovalStore(engine)
+    created = await store.create(goal="rejection delivered")
+    claimed = await store.claim_queued()
+    assert claimed is not None
+    seen_notes: list[str] = []
+
+    async def planner(goal: str, ws: Path) -> list[PlanStep]:
+        return [{"intent": "stage the note", "creates": ["notes.md"]}]
+
+    async def executor(step: PlanStep, ws: Path, job: JobView, note: str = "") -> str:
+        seen_notes.append(note)
+        (ws / "notes.md").write_text("note")
+        if note:
+            return "reported the limitation honestly"
+        tools = build_job_tools(ws, store, approvals, job.id)
+        run = _tool(tools, "run_command")
+        await run.ainvoke({"command": ["git", "add", "notes.md"]})  # type: ignore[attr-defined]
+        return "requested"
+
+    runner = JobRunner(store, saver, tmp_path, planner, executor, approvals=approvals)
+    await runner.run(claimed)
+    pending = await approvals.pending(created.id)
+    assert pending is not None
+    await approvals.decide(pending.id, "rejected")
+    resumed = await store.get(created.id)
+    assert resumed is not None
+    await runner.run(resumed)
+
+    final = await store.get(created.id)
+    assert final is not None and final.state == states.COMPLETED
+    types = [e.type for e in await store.events(created.id)]
+    assert "approval_rejected" in types
+    assert "command_executed" not in types, "a rejected command never runs"
+    assert "rejected" in seen_notes[1]
 
 
 # --- artifacts and the chat bridge ---------------------------------------

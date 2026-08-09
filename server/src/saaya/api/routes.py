@@ -93,7 +93,17 @@ async def chat(request: Request, body: ChatRequest) -> StreamingResponse:
             yield _sse(TurnError(message=str(error)))
             raise
 
-    return StreamingResponse(stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            # no-transform keeps compression middleware (the Next dev proxy's
+            # gzip, nginx, CDNs) from buffering the stream to death (F4);
+            # X-Accel-Buffering covers proxies that ignore Cache-Control.
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/api/chat/{thread_id}/messages")

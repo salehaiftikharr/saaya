@@ -181,7 +181,17 @@ async def job_events(request: Request, job_id: str, after_seq: int = 0) -> Strea
             yield ": keepalive\n\n"
             await asyncio.sleep(0.7)
 
-    return StreamingResponse(stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            # no-transform keeps compression middleware (the Next dev proxy's
+            # gzip, nginx, CDNs) from buffering the stream to death (F4);
+            # X-Accel-Buffering covers proxies that ignore Cache-Control.
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 class CreateScheduleBody(BaseModel):

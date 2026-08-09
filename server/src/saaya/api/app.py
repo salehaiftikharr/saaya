@@ -52,6 +52,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await saver.setup()
             engine = create_engine(resolved.database_url)
             memory_store = SemanticMemoryStore(engine, build_embedder(resolved))
+            from saaya.memory.seed import seed_memory_files
+
+            seed_memory_files(resolved.workspace_dir / "memory")
             # Imported here so hermetic API tests never import model providers.
             from saaya.agent.assembly import build_agent
             from saaya.mcp.consumption import load_external_tools
