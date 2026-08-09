@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 240" role="img" aria-label="The job lifecycle: queued to planning to running to completed; running pauses at waiting for you until a decision, can block on budgets or fail on errors, and both routes recover through retrying back into running.">
+  <title>The Saaya job lifecycle</title>
+  <defs>
+    <marker id="lfArrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0.5 L7.5,4 L0,7.5" fill="none" stroke="#8b949e" stroke-width="1.4"/>
+    </marker>
+    <marker id="lfAccent" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0.5 L7.5,4 L0,7.5" fill="none" stroke="#948aea" stroke-width="1.6"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="14.5" fill="#e9e8e4">
+
+    <rect x="30" y="96" width="120" height="46" rx="10" fill="none" stroke="#30363d" stroke-width="1.4"/>
+    <text x="90" y="124" text-anchor="middle">queued</text>
+
+    <rect x="205" y="96" width="130" height="46" rx="10" fill="none" stroke="#30363d" stroke-width="1.4"/>
+    <text x="270" y="124" text-anchor="middle">planning</text>
+
+    <rect x="390" y="96" width="130" height="46" rx="10" fill="none" stroke="#e9e8e4" stroke-width="1.7"/>
+    <text x="455" y="124" text-anchor="middle" font-weight="600">running</text>
+
+    <rect x="900" y="96" width="140" height="46" rx="10" fill="none" stroke="#30363d" stroke-width="1.4"/>
+    <text x="970" y="124" text-anchor="middle">completed</text>
+
+    <line x1="150" y1="119" x2="197" y2="119" stroke="#8b949e" stroke-width="1.4" marker-end="url(#lfArrow)"/>
+    <line x1="335" y1="119" x2="382" y2="119" stroke="#8b949e" stroke-width="1.4" marker-end="url(#lfArrow)"/>
+    <line x1="520" y1="119" x2="892" y2="119" stroke="#8b949e" stroke-width="1.4" marker-end="url(#lfArrow)"/>
+    <text x="706" y="109" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#8b949e">evidence recorded</text>
+
+    <!-- The gate: the accent state -->
+    <rect x="560" y="20" width="170" height="46" rx="10" fill="none" stroke="#948aea" stroke-width="1.7"/>
+    <text x="645" y="42" text-anchor="middle" fill="#948aea" font-weight="600" font-size="13.5">waiting for you</text>
+    <text x="645" y="58" text-anchor="middle" fill="#948aea" font-size="11.5">gated command</text>
+    <path d="M 490 96 C 500 60, 530 44, 552 43" fill="none" stroke="#948aea" stroke-width="1.7" marker-end="url(#lfAccent)"/>
+    <path d="M 640 66 C 620 92, 560 100, 528 108" fill="none" stroke="#948aea" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#lfAccent)"/>
+    <text x="758" y="46" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#948aea">your decision, enforced in code</text>
+
+    <!-- Failure and recovery -->
+    <rect x="390" y="176" width="130" height="42" rx="10" fill="none" stroke="#30363d" stroke-width="1.4"/>
+    <text x="455" y="202" text-anchor="middle" fill="#e5726d">failed / blocked</text>
+    <rect x="600" y="176" width="120" height="42" rx="10" fill="none" stroke="#30363d" stroke-width="1.4"/>
+    <text x="660" y="202" text-anchor="middle">retrying</text>
+
+    <line x1="455" y1="142" x2="455" y2="170" stroke="#8b949e" stroke-width="1.4" marker-end="url(#lfArrow)"/>
+    <line x1="520" y1="197" x2="592" y2="197" stroke="#8b949e" stroke-width="1.4" marker-end="url(#lfArrow)"/>
+    <path d="M 660 176 C 660 140, 560 132, 524 126" fill="none" stroke="#8b949e" stroke-width="1.4" marker-end="url(#lfArrow)"/>
+    <text x="806" y="200" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#8b949e">resumes from the checkpoint,</text>
+    <text x="806" y="216" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" fill="#8b949e">finished steps never repeat</text>
+  </g>
+</svg>
