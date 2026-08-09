@@ -1,5 +1,12 @@
 # Deploying Saaya
 
+Three modes, in increasing seriousness: local development (host processes
+plus a compose Postgres, the README's Run locally path), the container
+stack (everything below), and production, which is currently **blocked on
+one item**: the web app and API have no authentication yet. Do not expose
+them to the public internet until that gate lands; the plan and order are
+recorded in the journal.
+
 Saaya ships as three containers: server (FastAPI + agent), web (Next.js),
 and PostgreSQL with pgvector. Locally and on a small VM the stack is one
 command:
@@ -46,6 +53,33 @@ Two things hold state; everything else rebuilds from the repository.
   scripts.
 
 Take both together so memory rows and memory files stay consistent.
+
+## Runtime requirements that are easy to miss
+
+- **Exactly one server process.** The job worker, schedule ticker, and
+  reflection heartbeat live inside the FastAPI process. Never scale it to
+  multiple workers or replicas: schedules would double-fire. One process
+  is the design (ADR-009), and restart recovery makes it safe.
+- **Persistent storage for `workspace/`.** Job workspaces, procedural
+  memory, and active tool scripts live there. In the compose stack it is
+  a bind mount; on any host with an ephemeral filesystem, mount a
+  persistent disk at the workspace path and set `WORKSPACE_DIR` and
+  `JOBS_WORKSPACE_DIR` accordingly, or artifacts will not survive
+  deploys.
+- **Migrations are automatic.** The server container runs
+  `alembic upgrade head` at boot; first boot creates everything,
+  upgrades are additive, and the LangGraph-owned tables are guarded from
+  autogenerate.
+- **Environment.** Every variable is documented by name in
+  `.env.example`. Required: `CLAUDE_API_KEY`, `OPENAI_API_KEY`,
+  `DATABASE_URL`. Optional surfaces: `SLACK_BOT_TOKEN` +
+  `SLACK_APP_TOKEN` (plus Slack event subscriptions), `MCP_TOKEN`
+  (generate a strong value for anything beyond localhost),
+  `LANGSMITH_API_KEY`. Managed Postgres usually needs
+  `?sslmode=require` on the URL.
+- **Slack is outbound only** (Socket Mode); it works behind NAT with no
+  inbound route. **MCP is inbound** and bearer-authenticated; expose it
+  only through TLS and treat the token as a credential.
 
 ## Operational notes
 

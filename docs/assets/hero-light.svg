@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 168" role="img" aria-label="Saaya, the coworker that stays">
+  <title>Saaya, the coworker that stays</title>
+  <!-- The echo: the body is the work, the shadow is Saaya. Same geometry as
+       brand/saaya-mark.svg, scaled for the README hero. -->
+  <circle cx="253" cy="70" r="34" fill="#5a50bf" opacity="0.9"/>
+  <circle cx="235" cy="52" r="34" fill="#1b1d22"/>
+  <text x="280" y="150" text-anchor="middle"
+        font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+        font-size="44" font-weight="600" letter-spacing="-1" fill="#1b1d22">saaya</text>
+</svg>
