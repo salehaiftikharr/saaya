@@ -45,5 +45,23 @@ class Settings(BaseSettings):
 
 
 def load_settings() -> Settings:
-    """Read settings from the environment and the repo-root .env.local."""
-    return Settings()
+    """Read settings from the environment and the repo-root .env.local,
+    failing fast with named errors: a missing key should stop the boot
+    with its name, not surface as a provider error on the first model
+    call."""
+    settings = Settings()
+    missing = [
+        env_name
+        for env_name, value in (
+            ("CLAUDE_API_KEY", settings.claude_api_key),
+            ("OPENAI_API_KEY", settings.openai_api_key),
+        )
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(
+            "Missing required settings: "
+            + ", ".join(missing)
+            + ". Copy .env.example to .env.local and fill them in."
+        )
+    return settings

@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
-    <img src="docs/assets/hero-light.svg" alt="Saaya, the coworker that stays" width="420">
+    <source media="(prefers-color-scheme: dark)" srcset="brand/saaya-hero-dark.svg">
+    <img src="brand/saaya-hero.svg" alt="Saaya, the coworker that stays" width="520">
   </picture>
 </p>
 
@@ -20,6 +20,14 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6" alt="TypeScript strict">
   <img src="https://img.shields.io/badge/Python-typed%2C%20pyright-3776ab" alt="Python typed with pyright">
 </p>
+
+- **Durable jobs**: plans, contained workspaces, an append-only ledger, and
+  approval gates that survive killing the server
+- **Memory with provenance**: taught, corrected, forgotten, never silently
+  erased
+- **One coworker, three doors**: the same threads from web, Slack, and MCP
+- **Self-extension with consent**: proposed tools stay inert until you read
+  and approve the script
 
 Most AI assistants are disposable. You open a chat, get an answer, close the
 tab, and everything is gone: the context, the work in progress, the things
@@ -246,28 +254,12 @@ nothing runs unless you enable it.
 
 ## The architecture
 
-```mermaid
-flowchart LR
-    subgraph Surfaces
-        W[Web app<br/>Next.js] --- S[Slack<br/>Socket Mode] --- M[MCP clients<br/>bearer auth]
-    end
-    subgraph Server[FastAPI server]
-        A[Deep Agents harness<br/>LangChain models and tools]
-        J[Job worker and runner<br/>LangGraph graphs]
-        T[Schedule ticker]
-        H[Reflection heartbeat]
-    end
-    P[(Postgres + pgvector<br/>checkpoints, ledger,<br/>memory, artifacts)]
-    L[LangSmith tracing]
-    W -->|SSE| Server
-    S --> Server
-    M --> Server
-    A --> P
-    J --> P
-    T --> J
-    H --> A
-    Server -.-> L
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/saaya-architecture-dark.svg">
+    <img src="brand/saaya-architecture.svg" alt="Three doors, one coworker: web, Slack, and MCP reach the same Saaya harness; jobs run as checkpointed LangGraph graphs whose gated commands pause for the owner; everything durable lives in Postgres as checkpoints, ledger, memory, and artifacts." width="1080">
+  </picture>
+</p>
 
 | Layer | What it provides |
 | --- | --- |
@@ -319,6 +311,20 @@ is policy (nothing on the allowlist can reach the network) rather than a
 kernel namespace. Details and reporting in [SECURITY.md](SECURITY.md).
 
 ## Run locally
+
+Two golden paths. Development (hot reload on both sides):
+
+```console
+docker compose up -d && cd server && uv run saaya   # then: cd web && pnpm dev
+```
+
+Demo or deploy (the whole product as containers):
+
+```console
+docker compose --profile full up --build
+```
+
+The details, for those who want them below.
 
 Prerequisites: Docker, [uv](https://docs.astral.sh/uv/), pnpm, Node 20+,
 and an Anthropic API key (plus an OpenAI key for embeddings).
@@ -423,8 +429,9 @@ isolation is out of scope while jobs run only trusted tools.
 
 ## License and contribution
 
-A license has not been chosen yet; until one lands, all rights are
-reserved and the repository is private. Contributions follow
+A license has not been chosen yet, so all rights are reserved for now;
+until one lands, treat this repository as source-available for reading
+rather than reuse. Contributions follow
 [CONTRIBUTING.md](CONTRIBUTING.md); security reports follow
 [SECURITY.md](SECURITY.md). Saaya's interface foundation adapts
 components from [Rendi](https://github.com/mcheemaa/rendi) (MIT, by the

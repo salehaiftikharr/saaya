@@ -2,7 +2,7 @@
 id: P-039
 title: "Reviewer feedback, week tier: the checkpointer leak and its family"
 type: progress
-status: in-progress
+status: complete
 created: 2026-08-09
 updated: 2026-08-09
 tags:
@@ -79,9 +79,46 @@ owns its required files: `memory/seed.py` writes neutral defaults for
 overwriting), and the reflection read tolerates absence as defense in
 depth. Tests cover seeding, non-overwrite, and the tolerant read.
 
-## Evidence
+## The month tier and the presentation pass
 
-120 server tests green (7 new), pyright clean, live F4 proof through the
-proxy. The month-tier items (F6 through F14), docs and brand work, and
-the final regression gate continue in this phase; the matrix carries
-per-item status.
+The remaining confirmed items landed in two further increments. F6: a
+fetch blip keeps the last-known sidebar and health recovery refreshes
+it. F7: retry and stop live beside the workbench state badge. F8: the
+bench blocks are controlled Collapsibles, and the app console is clean
+with the workbench open on a completed job, exactly where the warning
+used to fire. F10: the identity prompt now states the gate accurately.
+F11: `uv run saaya` migrates and serves. F12: the adapter measures each
+tool call by run id, a `tool_timings` table persists it by call id
+(migration `233c09650a83`), history joins it, and live turns prefer the
+server measurement. F13: failed turns read offline-aware copy when
+health knows the server is gone. F14: `/health` answers, verified live.
+F15: the job prompts moved to `jobs/prompts/*.md`. F17 was already
+documented in `.env.example`.
+
+Presentation and infra: the README's private-repo falsehood is fixed,
+a four-line scan block sits under the hero, the two golden commands
+lead Run locally, and the Mermaid architecture flowchart is replaced by
+a hand-crafted light and dark SVG pair (accent reserved for the
+approval gate, mono annotations, previewed on GitHub's exact
+backgrounds through a local mock, one zoom-caught collision fixed
+before commit). Hero assets consolidated into `brand/`. Compose gained
+a server healthcheck with web gated on it, and settings fail fast with
+named keys at boot. The stranger's-eyes sweep over the public tree
+found no personal identifiers.
+
+## Evidence, final
+
+Server 123 tests (10 new this phase), web 72, six e2e proofs, pyright
+and biome clean, production build green. Migration from a truly empty
+database creates all twelve tables and was run and cleaned up.
+Rendered checks: workbench open with clean console, offline composer
+state, recovery without reload. The F4 stream fix was proven live
+through the gzip-requesting proxy.
+
+## Blocked on the owner, recorded
+
+The LICENSE decision (MIT recommended by the reviewer and previously
+floated here), the `gh repo edit` metadata block from the feedback
+package plus the social-preview upload, and the upstream issue filing
+for the checkpointer discovery (the public artifacts should carry the
+owner's voice and accounts).
