@@ -5,6 +5,28 @@ Running it locally requires ClickHouse, Trigger.dev cloud, and Neon Postgres wit
 
 Rendi is an agent harness whose first skin is analytics. Saaya is not an analytics product and adopts none of Rendi's charts, datasets, instruments, or terminology. What Saaya takes is the interaction architecture: the way Rendi makes durable agent work visible, steerable, and honest.
 
+## Ported code and attribution
+
+The owner authorized a direct source-level port of Rendi's interface code
+into Saaya (Rendi is the owner's own project, and it is MIT licensed;
+Copyright (c) 2026 Muhammad Ahmed Cheema). Files ported from Rendi at
+`04d62d6`, adapted where noted:
+
+- `components/ai-elements/`: code-block, conversation, loader, message,
+  prompt-input, reasoning, shimmer, tool (imports of the ai-sdk types
+  replaced by the local `lib/ai-parts.ts` shim; no transport code taken).
+- `components/ui/`: sidebar, command, kbd, spinner, badge, collapsible,
+  select, input-group, hover-card, button-group, breadcrumb.
+- `hooks/use-mobile.ts`.
+- Token structure: the `--live` and `--accent-text` semantic tokens were
+  added to Saaya's palette with Saaya values (violet primary for live,
+  amber for attention). Rendi's Ember palette, fonts, wordmark, and brand
+  assets were not taken.
+
+Analytics-specific components (instrument, query-data, dataset, pulse,
+commit-sync cards, the spatial canvas with camera and gestures, charts)
+were deliberately not ported.
+
 ## The shape worth stealing
 
 Rendi's own README names it: the session is the agent's inbox, and the user is only one of three writers. People write to it, finished background work writes to it, and the agent's own schedules write to it. The agent wakes for any of them with full memory, and the conversation state lives in a persisted log instead of in a machine.
