@@ -111,10 +111,10 @@ test.describe("application shell scroll model", () => {
 		}));
 		expect(doc.scrollHeight).toBeLessThanOrEqual(doc.clientHeight + 1);
 
-		const sidebar = page.locator('nav[aria-label="Conversations"]');
+		const sidebar = page.locator('[data-slot="sidebar-content"]');
 
 		const before = await page.evaluate(() => {
-			const nav = document.querySelector('nav[aria-label="Conversations"]');
+			const nav = document.querySelector('[data-slot="sidebar-content"]');
 			const log = document.querySelector('[role="log"]');
 			const pane = log?.closest('[data-slot="scroll-area-viewport"]');
 			return {
@@ -128,7 +128,7 @@ test.describe("application shell scroll model", () => {
 		await page.waitForTimeout(200);
 
 		const afterSidebarScroll = await page.evaluate(() => {
-			const nav = document.querySelector('nav[aria-label="Conversations"]');
+			const nav = document.querySelector('[data-slot="sidebar-content"]');
 			const log = document.querySelector('[role="log"]');
 			const pane = log?.closest('[data-slot="scroll-area-viewport"]');
 			return {
@@ -146,7 +146,7 @@ test.describe("application shell scroll model", () => {
 		await page.waitForTimeout(200);
 
 		const afterTranscriptScroll = await page.evaluate(() => {
-			const nav = document.querySelector('nav[aria-label="Conversations"]');
+			const nav = document.querySelector('[data-slot="sidebar-content"]');
 			const log = document.querySelector('[role="log"]');
 			const pane = log?.closest('[data-slot="scroll-area-viewport"]');
 			return {
