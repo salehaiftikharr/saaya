@@ -337,6 +337,7 @@ export function ChatApp() {
 									<Composer
 										disabled={working}
 										working={working}
+										offline={health.offline}
 										threadId={activeThread}
 										onSend={send}
 										onStop={stop}

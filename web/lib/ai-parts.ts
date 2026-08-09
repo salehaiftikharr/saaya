@@ -14,7 +14,8 @@ export type ToolUIPart = {
 		| "approval-responded"
 		| "output-available"
 		| "output-error"
-		| "output-denied";
+		| "output-denied"
+		| "interrupted";
 	input?: unknown;
 	output?: unknown;
 	errorText?: string;

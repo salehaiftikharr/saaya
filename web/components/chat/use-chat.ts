@@ -140,6 +140,7 @@ export function useChat() {
 									id: crypto.randomUUID(),
 									name: event.name,
 									state: "running" as const,
+									startedAt: Date.now(),
 								},
 							],
 						}));
@@ -152,6 +153,9 @@ export function useChat() {
 											...activity,
 											state: "done" as const,
 											outputPreview: event.output_preview,
+											durationMs: activity.startedAt
+												? Date.now() - activity.startedAt
+												: undefined,
 										}
 									: activity,
 							),

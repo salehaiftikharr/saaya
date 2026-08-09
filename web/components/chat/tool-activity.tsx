@@ -1,14 +1,15 @@
 "use client";
 
-import { Check, ChevronRight, CircleSlash, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Tool, ToolContent, ToolHeader } from "@/components/ai-elements/tool";
+import type { ToolUIPart } from "@/lib/ai-parts";
 
 export interface ToolActivity {
 	id: string;
 	name: string;
 	state: "running" | "done";
 	outputPreview?: string;
+	startedAt?: number;
+	durationMs?: number;
 }
 
 type Group = {
@@ -33,88 +34,78 @@ function groupByName(activities: ToolActivity[]): Group[] {
 	return groups;
 }
 
-// Repeated calls to the same tool collapse into one structured item: state,
-// name, count, and a result preview, with each call's output behind a
-// disclosure. A "running" state with no live stream is a dead turn and says
+function totalDuration(group: Group): string | null {
+	const known = group.calls
+		.map((call) => call.durationMs)
+		.filter((ms): ms is number => typeof ms === "number");
+	if (known.length === 0) return null;
+	const total = known.reduce((sum, ms) => sum + ms, 0);
+	return total < 1000 ? `${total}ms` : `${(total / 1000).toFixed(1)}s`;
+}
+
+// Repeated calls to the same tool collapse into one structured item on the
+// ported Tool disclosure: state badge, name, count, duration when measured,
+// and a result preview, with each call's output behind the disclosure. A
+// running group with no live stream belongs to a dead turn and says
 // interrupted instead of spinning forever.
 function ActivityItem({ group, live }: { group: Group; live: boolean }) {
-	const [open, setOpen] = useState(false);
 	const interrupted = group.running && !live;
+	const state: ToolUIPart["state"] = interrupted
+		? "interrupted"
+		: group.running
+			? "input-available"
+			: "output-available";
 	const lastPreview = [...group.calls]
 		.reverse()
 		.find((call) => call.outputPreview)?.outputPreview;
-	const summary = interrupted
-		? "interrupted"
-		: group.running
-			? "running"
-			: (lastPreview ?? "finished");
-	const expandable = group.calls.some((call) => call.outputPreview);
+	const duration = totalDuration(group);
+	const summaryParts = [
+		group.calls.length > 1 ? `x${group.calls.length}` : "",
+		duration ?? "",
+		interrupted ? "" : (lastPreview ?? ""),
+	].filter(Boolean);
 	return (
-		<div className="rounded-md border bg-card">
-			<button
-				type="button"
-				disabled={!expandable}
-				aria-expanded={expandable ? open : undefined}
-				onClick={() => expandable && setOpen((current) => !current)}
-				className={cn(
-					"flex w-full items-center gap-2 px-2.5 py-1.5 text-left",
-					expandable && "hover:bg-muted/40",
-				)}
-			>
-				{interrupted ? (
-					<CircleSlash
-						aria-hidden
-						className="size-3 shrink-0 text-muted-foreground"
-					/>
-				) : group.running ? (
-					<Loader2
-						aria-hidden
-						className="size-3 shrink-0 animate-spin motion-reduce:animate-none"
-					/>
-				) : (
-					<Check aria-hidden className="size-3 shrink-0 text-primary" />
-				)}
-				<span className="shrink-0 font-mono text-foreground text-xs">
-					{group.name}
-				</span>
-				{group.calls.length > 1 && (
-					<span className="shrink-0 rounded-full bg-secondary px-1.5 font-mono text-[10.5px] text-secondary-foreground">
-						x{group.calls.length}
-					</span>
-				)}
-				<span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
-					{summary}
-				</span>
-				<span className="sr-only">
-					{interrupted ? "interrupted" : group.running ? "running" : "finished"}
-				</span>
-				{expandable && (
-					<ChevronRight
-						aria-hidden
-						className={cn(
-							"ml-auto size-3 shrink-0 text-muted-foreground transition-transform",
-							open && "rotate-90",
-						)}
-					/>
-				)}
-			</button>
-			{open && (
-				<ol className="flex flex-col gap-1 border-t px-2.5 py-1.5">
+		<Tool className="bg-card">
+			<ToolHeader
+				type={`tool-${group.name}`}
+				state={state}
+				title={group.name}
+				summary={
+					summaryParts.length > 0 ? (
+						<span className="min-w-0 truncate font-mono text-muted-foreground text-xs">
+							{summaryParts.join(" · ")}
+						</span>
+					) : undefined
+				}
+			/>
+			<ToolContent>
+				<ol className="flex flex-col gap-1.5 border-t px-3 py-2">
 					{group.calls.map((call, index) => (
 						<li
 							key={call.id}
-							className="flex items-baseline gap-2 font-mono text-[11px] text-muted-foreground"
+							className="flex items-baseline gap-2 font-mono text-muted-foreground text-xs"
 						>
 							<span className="shrink-0 tabular-nums">{index + 1}.</span>
 							<span className="min-w-0 break-words">
 								{call.outputPreview ??
-									(call.state === "running" ? "no result yet" : "no output")}
+									(call.state === "running"
+										? interrupted
+											? "no result arrived"
+											: "no result yet"
+										: "no output")}
 							</span>
+							{typeof call.durationMs === "number" && (
+								<span className="ml-auto shrink-0 tabular-nums">
+									{call.durationMs < 1000
+										? `${call.durationMs}ms`
+										: `${(call.durationMs / 1000).toFixed(1)}s`}
+								</span>
+							)}
 						</li>
 					))}
 				</ol>
-			)}
-		</div>
+			</ToolContent>
+		</Tool>
 	);
 }
 
@@ -127,7 +118,7 @@ export function ToolActivityList({
 }) {
 	if (activities.length === 0) return null;
 	return (
-		<div className="flex flex-col gap-1">
+		<div className="flex flex-col gap-1.5">
 			{groupByName(activities).map((group) => (
 				<ActivityItem key={group.name} group={group} live={live} />
 			))}

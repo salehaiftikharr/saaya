@@ -47,6 +47,7 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
 		"output-available": "Completed",
 		"output-error": "Error",
 		"output-denied": "Denied",
+		interrupted: "Interrupted",
 	};
 
 	const icons: Record<ToolUIPart["state"], ReactNode> = {
@@ -57,6 +58,7 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
 		"output-available": <CheckCircleIcon className="size-4 text-live" />,
 		"output-error": <XCircleIcon className="size-4 text-destructive" />,
 		"output-denied": <XCircleIcon className="size-4 text-destructive" />,
+		interrupted: <CircleIcon className="size-4 text-muted-foreground" />,
 	};
 
 	return (

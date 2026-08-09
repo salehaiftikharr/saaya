@@ -1,44 +1,65 @@
 "use client";
 
-import { ArrowUp, Square } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useRef } from "react";
+import {
+	PromptInput,
+	PromptInputBody,
+	PromptInputFooter,
+	PromptInputProvider,
+	PromptInputSubmit,
+	PromptInputTextarea,
+	usePromptInputController,
+} from "@/components/ai-elements/prompt-input";
+import type { ChatStatus } from "@/lib/ai-parts";
 
 function draftKey(threadId: string | null): string {
 	return `saaya:draft:${threadId ?? "new"}`;
 }
 
+// Typed text survives switching conversations: each thread keeps its own
+// draft in sessionStorage, restored through the prompt controller when the
+// thread returns. Lives inside the provider so the textarea stays the
+// single source of truth.
+function DraftSync({ threadId }: { threadId: string | null }) {
+	const { textInput } = usePromptInputController();
+	const loadedFor = useRef<string | null>("__none__");
+
+	useEffect(() => {
+		if (loadedFor.current === threadId) return;
+		loadedFor.current = threadId;
+		textInput.setInput(sessionStorage.getItem(draftKey(threadId)) ?? "");
+	}, [threadId, textInput]);
+
+	useEffect(() => {
+		if (loadedFor.current !== threadId) return;
+		if (textInput.value) {
+			sessionStorage.setItem(draftKey(threadId), textInput.value);
+		} else {
+			sessionStorage.removeItem(draftKey(threadId));
+		}
+	}, [textInput.value, threadId]);
+
+	return null;
+}
+
 export function Composer({
 	disabled,
 	working = false,
+	offline = false,
 	threadId = null,
 	onSend,
 	onStop,
 }: {
 	disabled: boolean;
 	working?: boolean;
+	offline?: boolean;
 	threadId?: string | null;
 	onSend: (text: string) => void;
 	onStop?: () => void;
 }) {
-	const [draft, setDraft] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 	const submitting = useRef(false);
 	const wasWorking = useRef(false);
-
-	// Typed text survives switching conversations: each thread keeps its own
-	// draft in sessionStorage, restored when the thread returns.
-	useEffect(() => {
-		setDraft(sessionStorage.getItem(draftKey(threadId)) ?? "");
-	}, [threadId]);
-	useEffect(() => {
-		if (draft) {
-			sessionStorage.setItem(draftKey(threadId), draft);
-		} else {
-			sessionStorage.removeItem(draftKey(threadId));
-		}
-	}, [draft, threadId]);
 
 	// Focus returns to the composer when a turn ends, so the follow-up can
 	// be typed without a click.
@@ -49,80 +70,61 @@ export function Composer({
 		wasWorking.current = working;
 	}, [working]);
 
-	const autogrow = useCallback(() => {
-		const el = textareaRef.current;
-		if (!el) return;
-		el.style.height = "auto";
-		el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-	}, []);
-
-	const submit = () => {
-		const text = draft.trim();
-		// The submitting latch swallows the double-fire window between Enter
-		// and React's state flush, so one message never sends twice.
-		if (text === "" || disabled || submitting.current) return;
-		submitting.current = true;
-		setDraft("");
-		sessionStorage.removeItem(draftKey(threadId));
-		onSend(text);
-		textareaRef.current?.focus();
-		setTimeout(() => {
-			submitting.current = false;
-		}, 300);
-	};
+	const status: ChatStatus = working ? "streaming" : "ready";
+	const placeholder = offline
+		? "Reconnecting to Saaya…"
+		: working
+			? "Saaya is working…"
+			: "Message Saaya";
 
 	return (
-		<form
-			aria-label="Send a message"
-			className="flex shrink-0 items-end gap-2 border-t bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-			onSubmit={(event) => {
-				event.preventDefault();
-				submit();
-			}}
-		>
-			<Textarea
-				ref={textareaRef}
-				value={draft}
-				onChange={(event) => {
-					setDraft(event.target.value);
-					autogrow();
-				}}
-				onKeyDown={(event) => {
-					if (event.key === "Enter" && !event.shiftKey) {
-						event.preventDefault();
-						submit();
-					}
-				}}
-				placeholder={working ? "Saaya is working…" : "Message Saaya"}
-				aria-label="Message Saaya"
-				rows={1}
-				className="max-h-40 min-h-10 flex-1 resize-none"
-			/>
-			<div className="flex flex-col items-end gap-1">
-				{working && onStop ? (
-					<Button
-						type="button"
-						size="icon"
-						variant="outline"
-						aria-label="Stop the reply"
-						onClick={onStop}
-					>
-						<Square className="size-3.5" />
-					</Button>
-				) : (
-					<Button
-						type="submit"
-						size="icon"
-						aria-label="Send"
-						disabled={disabled || draft.trim() === ""}
-					>
-						<ArrowUp className="size-4" />
-					</Button>
-				)}
-				<span className="whitespace-nowrap text-[10px] text-muted-foreground">
-					Enter to send
-				</span>
-			</div>
-		</form>
+		<div className="shrink-0 px-4 pb-4 md:px-6 md:pb-5">
+			<PromptInputProvider>
+				<DraftSync threadId={threadId} />
+				<PromptInput
+					className="mx-auto max-w-3xl rounded-xl bg-card shadow-xs"
+					onSubmit={({ text }) => {
+						// The submitting latch swallows the double-fire window
+						// between Enter and React's state flush, so one message
+						// never sends twice.
+						const trimmed = text?.trim();
+						if (!trimmed || disabled || offline || submitting.current) {
+							return;
+						}
+						submitting.current = true;
+						sessionStorage.removeItem(draftKey(threadId));
+						onSend(trimmed);
+						setTimeout(() => {
+							submitting.current = false;
+						}, 300);
+					}}
+				>
+					<PromptInputBody>
+						<PromptInputTextarea
+							ref={textareaRef}
+							className="min-h-12"
+							placeholder={placeholder}
+							aria-label="Message Saaya"
+							disabled={disabled || offline}
+						/>
+					</PromptInputBody>
+					<PromptInputFooter className="justify-between gap-2">
+						<span className="whitespace-nowrap text-[10px] text-muted-foreground">
+							Enter to send, Shift+Enter for a new line
+						</span>
+						{working && onStop ? (
+							<PromptInputSubmit
+								status={status}
+								type="button"
+								onClick={onStop}
+								aria-label="Stop the reply"
+							/>
+						) : (
+							<PromptInputSubmit status={status} aria-label="Send" />
+						)}
+					</PromptInputFooter>
+				</PromptInput>
+			</PromptInputProvider>
+		</div>
 	);
 }
