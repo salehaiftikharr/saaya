@@ -19,6 +19,7 @@
   <img src="https://img.shields.io/badge/accessibility-axe%20gated-347d39" alt="accessibility: axe gated">
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6" alt="TypeScript strict">
   <img src="https://img.shields.io/badge/Python-typed%2C%20pyright-3776ab" alt="Python typed with pyright">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-4a75c4" alt="license: MIT"></a>
 </p>
 
 - **Durable jobs**: plans, contained workspaces, an append-only ledger, and
@@ -429,12 +430,10 @@ isolation is out of scope while jobs run only trusted tools.
 
 ## License and contribution
 
-A license has not been chosen yet, so all rights are reserved for now;
-until one lands, treat this repository as source-available for reading
-rather than reuse. Contributions follow
-[CONTRIBUTING.md](CONTRIBUTING.md); security reports follow
-[SECURITY.md](SECURITY.md). Saaya's interface foundation adapts
-components from [Rendi](https://github.com/mcheemaa/rendi) (MIT, by the
-same owner), recorded in
-[docs/design/rendi-study.md](docs/design/rendi-study.md), and its product
-thinking is documented against Phantom and Mistri in `docs/research/`.
+MIT: use it, modify it, deploy it, build on it. See [LICENSE](LICENSE).
+Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md); security reports
+follow [SECURITY.md](SECURITY.md). Saaya's interface foundation adapts
+components from [Rendi](https://github.com/mcheemaa/rendi) (MIT), recorded
+in [docs/design/rendi-study.md](docs/design/rendi-study.md), and its
+product thinking is documented against Phantom and Mistri in
+`docs/research/`.
