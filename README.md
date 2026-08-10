@@ -57,7 +57,10 @@ fictional Atlas fixture data:
   recorded a quiet run. Quiet is a valid, logged outcome.
 
 <p align="center">
-  <img src="docs/assets/workbench.png" alt="The Saaya workbench: a conversation with tool activity and a memory strip beside the job panel showing an approval waiting on the owner, the plan checklist, a registered artifact, and the event ledger" width="820">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/workbench-dark.png">
+    <img src="docs/assets/workbench.png" alt="The Saaya workbench during a release readiness job: the transcript carries grouped tool calls with measured durations, while the workbench holds a git commit waiting for the owner's approval, a seven-step plan with six steps done, three registered artifacts, and the live event ledger" width="820">
+  </picture>
 </p>
 
 ## The Saaya contract
