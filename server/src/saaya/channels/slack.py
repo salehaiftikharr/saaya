@@ -92,6 +92,14 @@ class SlackChannel:
             )
         await say(text=reply, thread_ts=reply_thread)
 
+    async def post_message(self, channel: str, thread_ts: str | None, text: str) -> None:
+        """Outbound delivery (job results); a DM target is a user id, which
+        chat.postMessage accepts as the channel."""
+        kwargs: dict[str, Any] = {"channel": channel, "text": text}
+        if thread_ts:
+            kwargs["thread_ts"] = thread_ts
+        await self._app.client.chat_postMessage(**kwargs)
+
     async def connect(self) -> None:
         await self._handler.connect_async()
 

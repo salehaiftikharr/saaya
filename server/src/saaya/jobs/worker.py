@@ -5,6 +5,7 @@ ledger, not in this process."""
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 
 from saaya.jobs import states
 from saaya.jobs.runner import JobRunner
@@ -14,11 +15,21 @@ from saaya.jobs.store import JobStore, JobView
 logger = logging.getLogger(__name__)
 
 
+TerminalHook = Callable[[JobView], Awaitable[None]]
+
+
 class JobWorker:
-    def __init__(self, store: JobStore, runner: JobRunner, poll_seconds: float = 2.0) -> None:
+    def __init__(
+        self,
+        store: JobStore,
+        runner: JobRunner,
+        poll_seconds: float = 2.0,
+        on_terminal: TerminalHook | None = None,
+    ) -> None:
         self._store = store
         self._runner = runner
         self._poll = poll_seconds
+        self._on_terminal = on_terminal
         self._tasks: set[asyncio.Task[None]] = set()
         self._loop_task: asyncio.Task[None] | None = None
         self._stopping = asyncio.Event()
@@ -78,6 +89,14 @@ class JobWorker:
     async def _run(self, job: JobView) -> None:
         try:
             await self._runner.run(job)
+            if self._on_terminal is not None:
+                settled = await self._store.get(job.id)
+                if settled is not None and settled.state in states.TERMINAL:
+                    # Best-effort delivery; the ledger already holds the truth.
+                    try:
+                        await self._on_terminal(settled)
+                    except Exception:
+                        logger.exception("terminal hook failed for %s", job.id)
         except asyncio.CancelledError:
             # Shutdown mid-run: leave the job live; recovery resumes it.
             raise

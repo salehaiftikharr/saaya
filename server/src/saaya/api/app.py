@@ -3,6 +3,7 @@
 import contextlib
 import os
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from fastapi import FastAPI
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -132,7 +133,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     executor=build_executor(resolved, job_store, approval_store),
                     approvals=approval_store,
                 )
-                job_worker = JobWorker(job_store, job_runner)
+                from saaya.jobs.notify import deliver_job_result
+
+                async def on_job_terminal(job_view: Any) -> None:
+                    poster = getattr(app.state, "slack_poster", None)
+                    if poster is None:
+                        return
+                    await deliver_job_result(
+                        job_view,
+                        job_store,
+                        approval_store,
+                        resolved.slack_owner_id,
+                        poster,
+                    )
+
+                job_worker = JobWorker(job_store, job_runner, on_terminal=on_job_terminal)
                 await job_worker.start()
             app.state.job_worker = job_worker
             from saaya.jobs.schedules import ScheduleStore, ScheduleTicker
@@ -157,6 +172,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
                 await slack.connect()
                 app.state.slack_connected = True
+
+                async def slack_post(channel: str, thread_ts: str | None, text: str) -> None:
+                    await slack.post_message(channel, thread_ts, text)
+
+                app.state.slack_poster = slack_post
             try:
                 if mcp_app is not None:
                     async with mcp_app.router.lifespan_context(mcp_app):

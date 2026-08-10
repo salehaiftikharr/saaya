@@ -3,7 +3,9 @@ minimal app, and the login flow with its lockout. No database, no model
 clients, no full lifespan."""
 
 import time
+from typing import cast
 
+import httpx
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -39,6 +41,16 @@ def test_token_expiry() -> None:
 # --- middleware and endpoints --------------------------------------------
 
 
+def get(client: TestClient, url: str) -> httpx.Response:
+    # cast keeps this file green whether or not the environment resolves
+    # httpx's client method return types (CI and local currently differ).
+    return cast("httpx.Response", client.get(url))
+
+
+def post(client: TestClient, url: str, body: dict[str, str] | None = None) -> httpx.Response:
+    return cast("httpx.Response", client.post(url, json=body))
+
+
 def build_app(passphrase: str = PASSPHRASE) -> TestClient:
     app = FastAPI()
     app.include_router(build_auth_router(passphrase))
@@ -57,35 +69,35 @@ def build_app(passphrase: str = PASSPHRASE) -> TestClient:
 
 def test_unauthenticated_api_is_refused() -> None:
     client = build_app()
-    assert client.get("/api/threads").status_code == 401
+    assert get(client, "/api/threads").status_code == 401
 
 
 def test_health_and_session_stay_public() -> None:
     client = build_app()
-    assert client.get("/health").status_code == 200
-    session = client.get("/api/auth/session")
+    assert get(client, "/health").status_code == 200
+    session = get(client, "/api/auth/session")
     assert session.status_code == 200
     assert session.json() == {"required": True, "authenticated": False}
 
 
 def test_login_grants_and_logout_revokes() -> None:
     client = build_app()
-    login = client.post("/api/auth/login", json={"passphrase": PASSPHRASE})
+    login = post(client, "/api/auth/login", {"passphrase": PASSPHRASE})
     assert login.status_code == 200
     assert COOKIE_NAME in login.cookies
-    assert client.get("/api/threads").status_code == 200
-    assert client.get("/api/auth/session").json()["authenticated"] is True
+    assert get(client, "/api/threads").status_code == 200
+    assert get(client, "/api/auth/session").json()["authenticated"] is True
 
     client.post("/api/auth/logout")
-    assert client.get("/api/threads").status_code == 401
+    assert get(client, "/api/threads").status_code == 401
 
 
 def test_wrong_passphrase_refused_and_locks_out() -> None:
     client = build_app()
     for _ in range(10):
-        refused = client.post("/api/auth/login", json={"passphrase": "wrong"})
+        refused = post(client, "/api/auth/login", {"passphrase": "wrong"})
         assert refused.status_code == 401
-    locked = client.post("/api/auth/login", json={"passphrase": PASSPHRASE})
+    locked = post(client, "/api/auth/login", {"passphrase": PASSPHRASE})
     assert locked.status_code == 429, "even the right passphrase waits out a lockout"
 
 
@@ -101,5 +113,5 @@ def test_lockout_expires() -> None:
 def test_disabled_auth_leaves_everything_open() -> None:
     client = build_app(passphrase="")
     assert client.get("/api/threads").status_code == 200
-    session = client.get("/api/auth/session").json()
+    session = get(client, "/api/auth/session").json()
     assert session == {"required": False, "authenticated": True}

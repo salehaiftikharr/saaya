@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     slack_bot_token: str = ""
     slack_app_token: str = ""
+    slack_owner_id: str = ""
 
     workspace_dir: Path = REPO_ROOT / "workspace"
     jobs_workspace_dir: Path = REPO_ROOT / "workspace" / "jobs"
