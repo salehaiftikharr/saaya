@@ -41,6 +41,60 @@ Both application images run as non-root users (saaya and node).
 5. Slack needs no inbound network (Socket Mode connects outward); MCP
    clients connect to `https://saaya.example.com/mcp` with the bearer token.
 
+## Split hosting (Render + Neon + Vercel)
+
+The managed-platform shape: the server runs as one Render web service,
+Postgres lives on Neon, and the web app deploys to Vercel with a rewrite
+that proxies `/api/*` to the server. The rewrite is what makes the split
+work: the browser only ever talks to the page's own origin, so the
+session cookie stays first party and no CORS surface exists.
+
+**Neon.** Create a project and copy the connection string. The migrations
+run `CREATE EXTENSION IF NOT EXISTS vector` at first boot, which Neon
+supports on every plan. Keep `?sslmode=require` on the URL.
+
+**Render.** One web service from this repository (`server/` root,
+Docker). Rules that do not bend:
+
+- Exactly one instance, never autoscaled (ADR-009: the worker, schedule
+  ticker, and heartbeat live in the process; replicas double-fire).
+- An always-on instance type. A free instance that sleeps kills running
+  jobs and misses schedule fires.
+- Attach a persistent disk and point `WORKSPACE_DIR` and
+  `JOBS_WORKSPACE_DIR` at its mount path, or artifacts and procedural
+  memory vanish on deploy.
+- Health check path `/health`: it is the one route that stays public
+  when the passphrase gate is on; `/api/health` sits behind the cookie.
+
+Environment on the server service: `CLAUDE_API_KEY`, `OPENAI_API_KEY`,
+`DATABASE_URL` (the Neon URL with `sslmode=require`), `AUTH_PASSPHRASE`
+(long and random; it is the only door), and `PUBLIC_URL` set to the
+service's https origin. Optional surfaces as needed: `SLACK_BOT_TOKEN`
+and `SLACK_APP_TOKEN` for the Slack door, `SLACK_OWNER_ID` so finished
+jobs from web and schedules reach your DM, and a strong generated
+`MCP_TOKEN` if MCP is wanted. MCP clients connect straight to the Render
+origin at `/mcp`; only `/api/*` flows through the Vercel rewrite.
+
+**Vercel.** Import the repository with root directory `web/` and set one
+environment variable: `SAAYA_API_URL`, the Render origin. The build
+already contains the rewrite that forwards `/api/:path*` there.
+
+**Verify the stream before trusting the deploy.** SSE now crosses two
+proxies, and any buffering layer turns the live transcript into a
+spinner. After deploying, log in on the Vercel origin and confirm chat
+tokens render as they stream, or watch it directly:
+
+```console
+curl -N -H "Cookie: saaya_session=<value from the browser>" \
+  https://<your-app>.vercel.app/api/jobs/<id>/events
+```
+
+Rows should appear one at a time, not in a burst at the end. The server
+already sends `Cache-Control: no-transform` and `X-Accel-Buffering: no`.
+If the stream still arrives buffered through the rewrite, the fallback
+is the single-origin shape: run the container stack behind one proxy
+(the small VM guide above), where SSE is proven.
+
 ## Backups
 
 Two things hold state; everything else rebuilds from the repository.
