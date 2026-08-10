@@ -2,8 +2,8 @@
 
 import contextlib
 import os
-from collections.abc import AsyncGenerator
-from typing import Any
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from typing import Any, cast
 
 from fastapi import FastAPI
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -42,11 +42,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         _export_langsmith_env(resolved)
         # A pool, not a single connection: one psycopg connection cannot
         # serve concurrent chat streams.
+        # check revalidates connections at checkout for the same reason the
+        # SQLAlchemy engine pre-pings: managed Postgres suspends idle
+        # databases and severs whatever the pool was holding.
         pool: AsyncConnectionPool[AsyncConnection[DictRow]] = AsyncConnectionPool(
             conninfo=resolved.database_url,
             open=False,
             connection_class=AsyncConnection[DictRow],
             kwargs={"autocommit": True, "row_factory": dict_row},
+            # cast: the library types its own check helper for TupleRow
+            # connections only; the check is row-shape agnostic at runtime.
+            check=cast(
+                "Callable[[AsyncConnection[DictRow]], Awaitable[None]]",
+                AsyncConnectionPool.check_connection,
+            ),
         )
         await pool.open()
         try:
