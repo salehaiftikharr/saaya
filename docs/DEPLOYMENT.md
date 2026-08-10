@@ -2,10 +2,10 @@
 
 Three modes, in increasing seriousness: local development (host processes
 plus a compose Postgres, the README's Run locally path), the container
-stack (everything below), and production, which is currently **blocked on
-one item**: the web app and API have no authentication yet. Do not expose
-them to the public internet until that gate lands; the plan and order are
-recorded in the journal.
+stack (everything below), and production. The production rule: **set
+`AUTH_PASSPHRASE` before anything faces the internet.** With it set,
+every API route requires the owner's session cookie; without it the
+instance is wide open and belongs on localhost only.
 
 Saaya ships as three containers: server (FastAPI + agent), web (Next.js),
 and PostgreSQL with pgvector. Locally and on a small VM the stack is one
@@ -72,7 +72,8 @@ Take both together so memory rows and memory files stay consistent.
   autogenerate.
 - **Environment.** Every variable is documented by name in
   `.env.example`. Required: `CLAUDE_API_KEY`, `OPENAI_API_KEY`,
-  `DATABASE_URL`. Optional surfaces: `SLACK_BOT_TOKEN` +
+  `DATABASE_URL`, and in production `AUTH_PASSPHRASE` (long and random;
+  it is the only door). Optional surfaces: `SLACK_BOT_TOKEN` +
   `SLACK_APP_TOKEN` (plus Slack event subscriptions), `MCP_TOKEN`
   (generate a strong value for anything beyond localhost),
   `LANGSMITH_API_KEY`. Managed Postgres usually needs

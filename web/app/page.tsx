@@ -1,5 +1,5 @@
-import { ChatApp } from "@/components/chat/chat-app";
+import { AppGate } from "@/components/shell/app-gate";
 
 export default function Home() {
-	return <ChatApp />;
+	return <AppGate />;
 }

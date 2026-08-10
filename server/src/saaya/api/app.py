@@ -10,6 +10,7 @@ from psycopg import AsyncConnection
 from psycopg.rows import DictRow, dict_row
 from psycopg_pool import AsyncConnectionPool
 
+from saaya.api.auth import auth_middleware, build_auth_router
 from saaya.api.job_routes import jobs_router
 from saaya.api.memory_routes import memory_router
 from saaya.api.routes import router
@@ -192,10 +193,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     app = FastAPI(title="saaya", lifespan=lifespan)
+    app.include_router(build_auth_router(resolved.auth_passphrase))
     app.include_router(router)
     app.include_router(memory_router)
     app.include_router(tools_router)
     app.include_router(jobs_router)
     if mcp_app is not None:
         app.mount("/mcp", mcp_app)
+    if resolved.auth_passphrase:
+        # Raw ASGI wrap so SSE streams pass through untouched; /health,
+        # /api/auth/*, and the bearer-authed /mcp mount stay reachable.
+        return auth_middleware(app, resolved.auth_passphrase)  # type: ignore[return-value]
     return app

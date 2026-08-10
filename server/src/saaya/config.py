@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     jobs_worker_enabled: bool = True
 
     mcp_token: str = ""
+    auth_passphrase: str = ""
     public_url: str = "http://localhost:8000"
 
     heartbeat_interval_seconds: int = 300

@@ -170,9 +170,10 @@ Secrets stay in gitignored env files and scrubbed subprocess environments;
 commands run deny-by-default with no network-capable allowlist entry;
 workspaces are containment-checked; approvals are enforced server-side;
 artifact reads are thread-scoped; MCP requires a bearer token; and a CI
-gate keeps demonstration surfaces on fictional data. The web app has no
-authentication yet, which is the recorded blocker before public
-deployment. Details and reporting: [SECURITY.md](SECURITY.md), threat
+gate keeps demonstration surfaces on fictional data. Deployment auth is
+one owner passphrase: set `AUTH_PASSPHRASE` and every API route requires
+a signed session cookie, with login rate-limited and `/health` left open
+for probes. Details and reporting: [SECURITY.md](SECURITY.md), threat
 model in [docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md).
 
 ## Run locally

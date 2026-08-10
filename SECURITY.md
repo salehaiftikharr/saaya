@@ -61,9 +61,13 @@ use and permanently recorded.
 
 ## Surfaces
 
-- **Web**: currently unauthenticated and intended for localhost use only.
-  Do not expose the web app or API to the public internet until the
-  authentication gate lands (this is the recorded pre-hosting blocker).
+- **Web**: authentication is one owner passphrase. When
+  `AUTH_PASSPHRASE` is set, every `/api` route requires a signed HttpOnly
+  session cookie (HMAC over an expiry, 30-day sessions, Secure on https);
+  login is constant-time compared and rate-limited per address (ten
+  failures, fifteen-minute lockout), and `/health` stays public for
+  probes. Unset, the app is open and intended for localhost development
+  only; never expose an instance without the passphrase set.
 - **Slack**: outbound Socket Mode only; no inbound webhook surface. The
   bot sees messages Slack sends it under its configured scopes.
 - **MCP**: bearer-token auth; the server activates only when `MCP_TOKEN`
@@ -83,8 +87,6 @@ the protected identity file cannot be written by reflection at all.
 
 ## Known limitations
 
-- No web authentication yet; the app is a single-operator localhost tool
-  until that gate ships.
 - Command network isolation is policy (nothing allowlisted can reach the
   network), not a kernel namespace; the container stack is the outer
   boundary.
